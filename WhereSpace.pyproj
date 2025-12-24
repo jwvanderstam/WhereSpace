@@ -1,0 +1,80 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>c92d24eb-706c-4e0c-9d0f-6cf9b9707137</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>WhereSpace.py</StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>WhereSpace</Name>
+    <RootNamespace>WhereSpace</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="batch_embeddings.py" />
+    <Compile Include="check_dependencies.py" />
+    <Compile Include="check_ingested_documents.py" />
+    <Compile Include="evaluate_rag.py" />
+    <Compile Include="main.py" />
+    <Compile Include="monitor_ingestion.py" />
+    <Compile Include="optimized_rag_query.py" />
+    <Compile Include="simple_connection_test.py" />
+    <Compile Include="tests\test_model_switching.py" />
+    <Compile Include="test_model_persistence.py" />
+    <Compile Include="test_postgres_connection.py" />
+    <Compile Include="WhereSpace.py" />
+    <Compile Include="WhereSpaceChat.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include=".gitignore" />
+    <Content Include="BATCH_EMBEDDING_GUIDE.md" />
+    <Content Include="BUG_FIXES.md" />
+    <Content Include="CHAT_FORMATTING_GUIDE.md" />
+    <Content Include="CLEANUP_SUMMARY.md" />
+    <Content Include="COMPLETE_SOLUTION_GUIDE.md" />
+    <Content Include="COMPREHENSIVE_OPTIMIZATION_GUIDE.md" />
+    <Content Include="docs\MODEL_PERSISTENCE_COMPLETE_FIX.md" />
+    <Content Include="DYNAMIC_MODEL_SWITCHING_GUIDE.md" />
+    <Content Include="INSTALLATION.md" />
+    <Content Include="MODEL_PERSISTENCE_FIX.md" />
+    <Content Include="MODEL_PERSISTENCE_GUIDE.md" />
+    <Content Include="MODEL_SWITCHER_GUIDE.md" />
+    <Content Include="OPTIMIZATION_SUMMARY.md" />
+    <Content Include="PERFORMANCE_GUIDE.md" />
+    <Content Include="QUICK_OPTIMIZATION_GUIDE.md" />
+    <Content Include="QUICK_REFERENCE.md" />
+    <Content Include="README.md" />
+    <Content Include="README_NEW.md" />
+    <Content Include="requirements.txt" />
+    <Content Include="ROBUST_INGESTION.md" />
+    <Content Include="start.bat" />
+    <Content Include="start.sh" />
+    <Content Include="templates\index.html" />
+    <Content Include="TROUBLESHOOTING.md" />
+    <Content Include="UNICODE_FIX.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="docs\" />
+    <Folder Include="templates\" />
+    <Folder Include="tests\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+  <!-- Uncomment the CoreCompile target to enable the Build command in
+       Visual Studio and specify your pre- and post-build commands in
+       the BeforeBuild and AfterBuild targets below. -->
+  <!--<Target Name="CoreCompile" />-->
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+</Project>
