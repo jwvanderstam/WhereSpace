@@ -384,9 +384,47 @@ ANTWOORD (gestructureerd en geformatteerd):"""
             OLLAMA_URL,
             json=payload,
             stream=True,
-            timeout=60
+            timeout=120  # Increased timeout for large models
         )
-        resp.raise_for_status()
+        
+        # Better error handling
+        if resp.status_code != 200:
+            error_detail = resp.text
+            logger.error(f"Ollama API error (status {resp.status_code}): {error_detail}")
+            
+            # Check for specific error conditions
+            if resp.status_code == 500:
+                # Try to parse error message
+                try:
+                    error_data = resp.json()
+                    error_msg = error_data.get('error', error_detail)
+                except:
+                    error_msg = error_detail
+                
+                logger.error(f"Ollama internal error: {error_msg}")
+                
+                # Provide helpful error message
+                if "out of memory" in error_msg.lower() or "oom" in error_msg.lower():
+                    yield "❌ Model heeft onvoldoende geheugen. Dit model is te groot voor uw systeem.\n\n"
+                    yield "💡 **Suggesties:**\n"
+                    yield "- Switch naar een kleiner model (llama3.1, mistral, gemma2)\n"
+                    yield "- Sluit andere applicaties om geheugen vrij te maken\n"
+                    yield "- Herstart Ollama: `ollama serve`\n"
+                elif "not found" in error_msg.lower():
+                    yield f"❌ Model '{current_model}' niet gevonden in Ollama.\n\n"
+                    yield "💡 **Suggesties:**\n"
+                    yield f"- Pull het model: `ollama pull {current_model}`\n"
+                    yield "- Refresh de model lijst in de web interface\n"
+                    yield "- Kies een ander model uit de dropdown\n"
+                else:
+                    yield f"❌ Ollama fout: {error_msg}\n\n"
+                    yield "💡 **Suggesties:**\n"
+                    yield "- Herstart Ollama: `ollama serve`\n"
+                    yield "- Controleer of het model correct is geïnstalleerd\n"
+                    yield "- Probeer een ander model\n"
+                return
+            
+            raise Exception(f"HTTP {resp.status_code}: {error_detail}")
         
         for line in resp.iter_lines():
             if line:
@@ -394,14 +432,30 @@ ANTWOORD (gestructureerd en geformatteerd):"""
                     data = json.loads(line)
                     if 'response' in data:
                         yield data['response']
+                    elif 'error' in data:
+                        error_msg = data['error']
+                        logger.error(f"Ollama streaming error: {error_msg}")
+                        yield f"\n\n❌ Fout: {error_msg}\n"
+                        return
                 except json.JSONDecodeError:
                     continue
                     
+    except requests.exceptions.Timeout:
+        logger.error(f"Ollama request timeout after 120 seconds")
+        yield "❌ Model reactie timeout. Het model reageert niet binnen 2 minuten.\n\n"
+        yield "💡 **Dit kan betekenen:**\n"
+        yield "- Het model is te groot voor uw systeem\n"
+        yield "- Ollama is overbelast\n"
+        yield "- Probeer een kleiner/sneller model\n"
+    except requests.exceptions.ConnectionError:
+        logger.error("Cannot connect to Ollama")
+        yield "❌ Kan geen verbinding maken met Ollama.\n\n"
+        yield "💡 **Controleer:**\n"
+        yield "- Is Ollama gestart? Run: `ollama serve`\n"
+        yield "- Controleer: `curl http://localhost:11434/api/tags`\n"
     except Exception as e:
         logger.error(f"Error generating streaming response: {e}")
-        yield f"Error: {str(e)}"
-
-
+        yield f"❌ Error: {str(e)}\n"
 @app.route('/')
 def index():
     """Render main chat interface."""
@@ -445,7 +499,7 @@ def query_stream():
                     'file': chunk['file_name'],
                     'chunk': chunk['chunk_index'],
                     'similarity': round(chunk['similarity'] * 100, 1),
-                    'preview': chunk['preview']
+                    'preview': chunk['preview'
                 }
                 for chunk in similar_chunks
             ]
@@ -492,9 +546,34 @@ def query_direct_stream():
                     OLLAMA_URL,
                     json=payload,
                     stream=True,
-                    timeout=60
+                    timeout=120  # Increased timeout for large models
                 )
-                resp.raise_for_status()
+                
+                # Better error handling
+                if resp.status_code != 200:
+                    error_detail = resp.text
+                    logger.error(f"Ollama API error (status {resp.status_code}): {error_detail}")
+                    
+                    # Provide helpful error message
+                    if resp.status_code == 500:
+                        try:
+                            error_data = resp.json()
+                            error_msg = error_data.get('error', error_detail)
+                        except:
+                            error_msg = error_detail
+                        
+                        logger.error(f"Ollama internal error: {error_msg}")
+                        
+                        if "out of memory" in error_msg.lower() or "oom" in error_msg.lower():
+                            yield f"data: {json.dumps({'type': 'error', 'content': '❌ Model heeft onvoldoende geheugen. Dit model is te groot voor uw systeem. Switch naar een kleiner model (llama3.1, mistral, gemma2).'})}\n\n"
+                        elif "not found" in error_msg.lower():
+                            yield f"data: {json.dumps({'type': 'error', 'content': '❌ Model {current_model} niet gevonden. Pull het model: ollama pull {current_model}'})}\n\n"
+                        else:
+                            yield f"data: {json.dumps({'type': 'error', 'content': '❌ Ollama fout: {error_msg}'})}\n\n"
+                        return
+                    
+                    yield f"data: {json.dumps({'type': 'error', 'content': 'HTTP {resp.status_code}: {error_detail}'})}\n\n"
+                    return
                 
                 for line in resp.iter_lines():
                     if line:
@@ -502,11 +581,22 @@ def query_direct_stream():
                             data = json.loads(line)
                             if 'response' in data:
                                 yield f"data: {json.dumps({'type': 'response', 'content': data['response']})}\n\n"
+                            elif 'error' in data:
+                                error_msg = data['error']
+                                logger.error(f"Ollama streaming error: {error_msg}")
+                                yield f"data: {json.dumps({'type': 'error', 'content': '❌ Fout: {error_msg}'})}\n\n"
+                                return
                         except json.JSONDecodeError:
                             continue
                 
                 yield f"data: {json.dumps({'type': 'done'})}\n\n"
                 
+            except requests.exceptions.Timeout:
+                logger.error(f"Ollama request timeout after 120 seconds")
+                yield f"data: {json.dumps({'type': 'error', 'content': '❌ Model reactie timeout (2 min). Probeer een kleiner/sneller model.'})}\n\n"
+            except requests.exceptions.ConnectionError:
+                logger.error("Cannot connect to Ollama")
+                yield f"data: {json.dumps({'type': 'error', 'content': '❌ Kan geen verbinding maken met Ollama. Controleer: ollama serve'})}\n\n"
             except Exception as e:
                 logger.error(f"Error in streaming: {e}")
                 yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
@@ -740,6 +830,55 @@ def set_model():
                     'suggestion': 'Pull the model with: ollama pull ' + model_id
                 }), 404
             
+            # TEST THE MODEL before switching (quick test to see if it loads)
+            logger.info(f"Testing model {actual_model_name} before switching...")
+            try:
+                test_response = requests.post(
+                    'http://localhost:11434/api/generate',
+                    json={
+                        "model": actual_model_name,
+                        "prompt": "test",
+                        "stream": False
+                    },
+                    timeout=30  # 30 second timeout for model load test
+                )
+                
+                if test_response.status_code != 200:
+                    error_detail = test_response.text
+                    try:
+                        error_data = test_response.json()
+                        error_msg = error_data.get('error', error_detail)
+                    except:
+                        error_msg = error_detail
+                    
+                    logger.error(f"Model test failed: {error_msg}")
+                    
+                    # Provide specific error messages
+                    if "out of memory" in error_msg.lower() or "oom" in error_msg.lower():
+                        return jsonify({
+                            'error': f'Model "{actual_model_name}" is te groot voor uw systeem',
+                            'details': 'Onvoldoende geheugen beschikbaar',
+                            'suggestion': 'Kies een kleiner model (llama3.1, mistral, gemma2) of sluit andere applicaties'
+                        }), 400
+                    else:
+                        return jsonify({
+                            'error': f'Model "{actual_model_name}" kan niet worden geladen',
+                            'details': error_msg,
+                            'suggestion': 'Herstart Ollama of kies een ander model'
+                        }), 400
+                
+                logger.info(f"✓ Model test passed for {actual_model_name}")
+                
+            except requests.exceptions.Timeout:
+                logger.warning(f"Model test timeout for {actual_model_name} - model may be slow to load")
+                return jsonify({
+                    'warning': f'Model "{actual_model_name}" is groot en kan traag laden',
+                    'success': True,
+                    'model': actual_model_name,
+                    'message': f'Model switched to {actual_model_name} (first query may be slow)',
+                    'verified': True
+                })
+            
             # Update the current model (this saves to disk)
             set_current_model(actual_model_name)
             
@@ -786,13 +925,14 @@ def set_model():
                     'model': actual_model_name
                 }), 500
             
-            logger.info(f"✓✓✓ Model switched to: {actual_model_name} (verified persistent)")
+            logger.info(f"✓✓✓ Model switched to: {actual_model_name} (verified persistent and tested)")
             
             return jsonify({
                 'success': True,
                 'model': actual_model_name,
                 'message': f'Model switched to {actual_model_name}',
                 'verified': True,
+                'tested': True,
                 'config_file': str(MODEL_CONFIG_FILE)
             })
             
@@ -812,7 +952,8 @@ def set_model():
                 'model': model_id,
                 'message': f'Model switched to {model_id}',
                 'warning': 'Could not verify with Ollama - make sure model is available',
-                'verified': verification_passed
+                'verified': verification_passed,
+                'tested': False
             })
         
     except Exception as e:
