@@ -499,7 +499,7 @@ def query_stream():
                     'file': chunk['file_name'],
                     'chunk': chunk['chunk_index'],
                     'similarity': round(chunk['similarity'] * 100, 1),
-                    'preview': chunk['preview'
+                    'preview': chunk['preview']
                 }
                 for chunk in similar_chunks
             ]
