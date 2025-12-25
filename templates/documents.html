@@ -1,0 +1,844 @@
+{% extends "base.html" %}
+
+{% block title %}Documenten - JW zijn babbeldoos{% endblock %}
+
+{% block page_title %}Documenten Beheer{% endblock %}
+
+{% block top_bar_actions %}
+<button class="btn btn-danger" onclick="confirmFlushAll()" id="flush-all-btn" style="display: none;">
+    ??? Verwijder Alle Documenten
+</button>
+<button class="btn btn-primary" onclick="window.location.href='/ingest'">
+    ?? Nieuwe Documenten Indexeren
+</button>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .documents-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .search-filter-bar {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        align-items: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .search-box {
+        flex: 1;
+        min-width: 250px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 12px 20px;
+        border: 2px solid #e0e0e0;
+        border-radius: 25px;
+        font-size: 15px;
+        outline: none;
+        transition: border-color 0.3s;
+    }
+
+    .search-input:focus {
+        border-color: var(--primary);
+    }
+
+    .filter-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .filter-select {
+        padding: 10px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 20px;
+        font-size: 14px;
+        outline: none;
+        cursor: pointer;
+        background: white;
+        transition: border-color 0.3s;
+    }
+
+    .filter-select:focus {
+        border-color: var(--primary);
+    }
+
+    .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .stat-icon {
+        font-size: 36px;
+        opacity: 0.8;
+    }
+
+    .stat-info h3 {
+        font-size: 28px;
+        color: var(--primary);
+        margin-bottom: 5px;
+    }
+
+    .stat-info p {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .documents-grid {
+        display: grid;
+        gap: 15px;
+    }
+
+    .document-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s;
+        border-left: 4px solid var(--primary);
+    }
+
+    .document-card:hover {
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .document-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 15px;
+    }
+
+    .document-title {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .file-icon {
+        font-size: 24px;
+    }
+
+    .document-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--dark);
+        word-break: break-word;
+    }
+
+    .document-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .action-btn {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .action-btn.view {
+        background: var(--primary);
+        color: white;
+    }
+
+    .action-btn.delete {
+        background: var(--danger);
+        color: white;
+    }
+
+    .action-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .document-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 10px;
+        font-size: 14px;
+        color: #666;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .meta-icon {
+        opacity: 0.6;
+    }
+
+    .document-stats {
+        display: flex;
+        gap: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+    }
+
+    .stat-value {
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .type-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .type-badge.pdf {
+        background: #ffebee;
+        color: #c62828;
+    }
+
+    .type-badge.docx {
+        background: #e3f2fd;
+        color: #1565c0;
+    }
+
+    .type-badge.txt {
+        background: #f3e5f5;
+        color: #6a1b9a;
+    }
+
+    .type-badge.md {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .type-badge.csv {
+        background: #fff3e0;
+        color: #e65100;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        background: white;
+        border-radius: 12px;
+    }
+
+    .empty-state-icon {
+        font-size: 80px;
+        margin-bottom: 20px;
+        opacity: 0.3;
+    }
+
+    .empty-state h2 {
+        font-size: 24px;
+        color: #666;
+        margin-bottom: 10px;
+    }
+
+    .empty-state p {
+        font-size: 16px;
+        color: #999;
+        margin-bottom: 30px;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .loading .spinner {
+        margin: 0 auto 20px;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal.show {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 16px;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 30px;
+        width: 90%;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--light);
+    }
+
+    .modal-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 28px;
+        cursor: pointer;
+        color: #999;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.3s;
+    }
+
+    .close-btn:hover {
+        color: var(--danger);
+    }
+
+    .chunk-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .chunk-item {
+        background: var(--light);
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        border-left: 3px solid var(--primary);
+    }
+
+    .chunk-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .chunk-content {
+        color: #555;
+        line-height: 1.6;
+        font-size: 14px;
+    }
+
+    .sort-buttons {
+        display: flex;
+        gap: 5px;
+    }
+
+    .sort-btn {
+        padding: 8px 12px;
+        border: 2px solid #e0e0e0;
+        background: white;
+        border-radius: 20px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .sort-btn.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    .sort-btn:hover:not(.active) {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="documents-container">
+    <!-- Statistics -->
+    <div class="stats-bar" id="stats-bar">
+        <div class="stat-card">
+            <div class="stat-icon">??</div>
+            <div class="stat-info">
+                <h3 id="total-docs">-</h3>
+                <p>Totaal Documenten</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">??</div>
+            <div class="stat-info">
+                <h3 id="total-chunks">-</h3>
+                <p>Totaal Chunks</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">??</div>
+            <div class="stat-info">
+                <h3 id="total-size">-</h3>
+                <p>Totale Grootte</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="search-filter-bar">
+        <div class="search-box">
+            <input type="text" 
+                   class="search-input" 
+                   id="search-input" 
+                   placeholder="?? Zoek documenten op naam..."
+                   oninput="filterDocuments()">
+        </div>
+        
+        <div class="filter-group">
+            <label style="font-size: 14px; color: #666;">Type:</label>
+            <select class="filter-select" id="type-filter" onchange="filterDocuments()">
+                <option value="">Alle Types</option>
+                <option value="pdf">PDF</option>
+                <option value="docx">DOCX</option>
+                <option value="txt">TXT</option>
+                <option value="md">Markdown</option>
+                <option value="csv">CSV</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label style="font-size: 14px; color: #666;">Sorteer:</label>
+            <div class="sort-buttons">
+                <button class="sort-btn active" data-sort="name" onclick="setSortOrder('name')">Naam</button>
+                <button class="sort-btn" data-sort="size" onclick="setSortOrder('size')">Grootte</button>
+                <button class="sort-btn" data-sort="chunks" onclick="setSortOrder('chunks')">Chunks</button>
+                <button class="sort-btn" data-sort="date" onclick="setSortOrder('date')">Datum</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Documents Grid -->
+    <div id="documents-container">
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Documenten laden...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Document Details Modal -->
+<div class="modal" id="details-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title" id="modal-title">Document Details</h2>
+            <button class="close-btn" onclick="closeDetailsModal()">&times;</button>
+        </div>
+        <div id="modal-body">
+            <!-- Content will be loaded dynamically -->
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="delete-modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Bevestig Verwijderen</h2>
+            <button class="close-btn" onclick="closeDeleteModal()">&times;</button>
+        </div>
+        <div style="padding: 20px 0;">
+            <p style="font-size: 16px; color: #666; margin-bottom: 20px;">
+                Weet je zeker dat je dit document wilt verwijderen?
+            </p>
+            <p style="font-size: 14px; color: #999; margin-bottom: 20px;">
+                <strong id="delete-doc-name"></strong>
+            </p>
+            <p style="font-size: 14px; color: #d32f2f;">
+                Deze actie kan niet ongedaan worden gemaakt.
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">Annuleren</button>
+            <button class="btn btn-danger" onclick="confirmDelete()">Verwijderen</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let allDocuments = [];
+    let currentSortOrder = 'name';
+    let documentToDelete = null;
+
+    // Load documents on page load
+    async function loadDocuments() {
+        try {
+            const response = await fetch('/api/list_documents');
+            const data = await response.json();
+
+            if (data.success) {
+                allDocuments = data.documents;
+                updateStatistics(data);
+                renderDocuments(allDocuments);
+                
+                // Show flush button if documents exist
+                if (allDocuments.length > 0) {
+                    document.getElementById('flush-all-btn').style.display = 'inline-block';
+                }
+            } else {
+                showEmptyState();
+            }
+        } catch (error) {
+            console.error('Error loading documents:', error);
+            showError('Fout bij laden van documenten');
+        }
+    }
+
+    function updateStatistics(data) {
+        document.getElementById('total-docs').textContent = data.total_count.toLocaleString();
+        
+        // Calculate total chunks
+        const totalChunks = allDocuments.reduce((sum, doc) => sum + doc.chunk_count, 0);
+        document.getElementById('total-chunks').textContent = totalChunks.toLocaleString();
+        
+        // Calculate total size
+        const totalSize = allDocuments.reduce((sum, doc) => sum + doc.file_size, 0);
+        document.getElementById('total-size').textContent = formatSize(totalSize);
+    }
+
+    function renderDocuments(documents) {
+        const container = document.getElementById('documents-container');
+        
+        if (documents.length === 0) {
+            showEmptyState();
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="documents-grid">
+                ${documents.map(doc => createDocumentCard(doc)).join('')}
+            </div>
+        `;
+    }
+
+    function createDocumentCard(doc) {
+        const icon = getFileIcon(doc.file_type);
+        const typeBadge = `<span class="type-badge ${doc.file_type}">${doc.file_type.toUpperCase()}</span>`;
+        
+        return `
+            <div class="document-card" data-path="${doc.file_path}">
+                <div class="document-header">
+                    <div class="document-title">
+                        <span class="file-icon">${icon}</span>
+                        <div>
+                            <div class="document-name">${escapeHtml(doc.file_name)}</div>
+                            ${typeBadge}
+                        </div>
+                    </div>
+                    <div class="document-actions">
+                        <button class="action-btn view" onclick="viewDocument('${escapeHtml(doc.file_path)}')">
+                            ??? Details
+                        </button>
+                        <button class="action-btn delete" onclick="deleteDocument('${escapeHtml(doc.file_path)}', '${escapeHtml(doc.file_name)}')">
+                            ???
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="document-meta">
+                    <div class="meta-item">
+                        <span class="meta-icon">??</span>
+                        <span>${doc.file_size_formatted}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-icon">??</span>
+                        <span>${doc.chunk_count} chunks</span>
+                    </div>
+                    ${doc.ingested_at ? `
+                    <div class="meta-item">
+                        <span class="meta-icon">??</span>
+                        <span>${doc.ingested_at}</span>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="document-stats">
+                    <div class="stat-item">
+                        <span>??</span>
+                        <span style="font-size: 12px; color: #999; word-break: break-all;">${escapeHtml(doc.file_path)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function getFileIcon(type) {
+        const icons = {
+            'pdf': '??',
+            'docx': '??',
+            'txt': '??',
+            'md': '??',
+            'csv': '??'
+        };
+        return icons[type] || '??';
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function showEmptyState() {
+        const container = document.getElementById('documents-container');
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">??</div>
+                <h2>Geen documenten gevonden</h2>
+                <p>Begin met het indexeren van documenten om ze hier te zien verschijnen.</p>
+                <button class="btn btn-primary" onclick="window.location.href='/ingest'" style="margin-top: 20px;">
+                    ?? Documenten Indexeren
+                </button>
+            </div>
+        `;
+        document.getElementById('flush-all-btn').style.display = 'none';
+    }
+
+    function showError(message) {
+        const container = document.getElementById('documents-container');
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">??</div>
+                <h2>Fout bij laden</h2>
+                <p>${message}</p>
+                <button class="btn btn-primary" onclick="loadDocuments()" style="margin-top: 20px;">
+                    ?? Opnieuw Proberen
+                </button>
+            </div>
+        `;
+    }
+
+    // Filter and Sort Functions
+    function filterDocuments() {
+        const searchTerm = document.getElementById('search-input').value.toLowerCase();
+        const typeFilter = document.getElementById('type-filter').value;
+
+        let filtered = allDocuments.filter(doc => {
+            const matchesSearch = doc.file_name.toLowerCase().includes(searchTerm);
+            const matchesType = !typeFilter || doc.file_type === typeFilter;
+            return matchesSearch && matchesType;
+        });
+
+        // Apply current sort
+        filtered = sortDocuments(filtered, currentSortOrder);
+        renderDocuments(filtered);
+    }
+
+    function setSortOrder(order) {
+        currentSortOrder = order;
+        
+        // Update active button
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.sort === order);
+        });
+
+        filterDocuments();
+    }
+
+    function sortDocuments(docs, order) {
+        const sorted = [...docs];
+        
+        switch(order) {
+            case 'name':
+                sorted.sort((a, b) => a.file_name.localeCompare(b.file_name));
+                break;
+            case 'size':
+                sorted.sort((a, b) => b.file_size - a.file_size);
+                break;
+            case 'chunks':
+                sorted.sort((a, b) => b.chunk_count - a.chunk_count);
+                break;
+            case 'date':
+                sorted.sort((a, b) => {
+                    if (!a.ingested_at) return 1;
+                    if (!b.ingested_at) return -1;
+                    return new Date(b.ingested_at) - new Date(a.ingested_at);
+                });
+                break;
+        }
+        
+        return sorted;
+    }
+
+    // Document Actions
+    async function viewDocument(filePath) {
+        // Show modal with loading
+        const modal = document.getElementById('details-modal');
+        const modalBody = document.getElementById('modal-body');
+        const modalTitle = document.getElementById('modal-title');
+        
+        modal.classList.add('show');
+        modalBody.innerHTML = '<div class="loading"><div class="spinner"></div><p>Laden...</p></div>';
+        
+        try {
+            const response = await fetch(`/api/document/details?path=${encodeURIComponent(filePath)}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                modalTitle.textContent = data.document.file_name;
+                modalBody.innerHTML = `
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="color: var(--primary); margin-bottom: 15px;">Informatie</h3>
+                        <div style="display: grid; gap: 10px;">
+                            <div><strong>Type:</strong> ${data.document.file_type.toUpperCase()}</div>
+                            <div><strong>Grootte:</strong> ${data.document.file_size_formatted}</div>
+                            <div><strong>Chunks:</strong> ${data.document.chunk_count}</div>
+                            <div><strong>Geïndexeerd:</strong> ${data.document.ingested_at || 'Onbekend'}</div>
+                            <div style="word-break: break-all;"><strong>Locatie:</strong> ${data.document.file_path}</div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 style="color: var(--primary); margin-bottom: 15px;">Chunks (${data.chunks.length})</h3>
+                        <ul class="chunk-list">
+                            ${data.chunks.map((chunk, index) => `
+                                <li class="chunk-item">
+                                    <div class="chunk-header">
+                                        <span>Chunk ${index + 1}</span>
+                                        <span>${chunk.preview.length} karakters</span>
+                                    </div>
+                                    <div class="chunk-content">${escapeHtml(chunk.preview)}</div>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            } else {
+                modalBody.innerHTML = `<p style="color: var(--danger);">Fout bij laden van details</p>`;
+            }
+        } catch (error) {
+            modalBody.innerHTML = `<p style="color: var(--danger);">Fout: ${error.message}</p>`;
+        }
+    }
+
+    function closeDetailsModal() {
+        document.getElementById('details-modal').classList.remove('show');
+    }
+
+    function deleteDocument(filePath, fileName) {
+        documentToDelete = filePath;
+        document.getElementById('delete-doc-name').textContent = fileName;
+        document.getElementById('delete-modal').classList.add('show');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('delete-modal').classList.remove('show');
+        documentToDelete = null;
+    }
+
+    async function confirmDelete() {
+        if (!documentToDelete) return;
+
+        try {
+            const response = await fetch('/api/document/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ file_path: documentToDelete })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showNotification('Document verwijderd', 'success');
+                closeDeleteModal();
+                loadDocuments(); // Reload list
+            } else {
+                showNotification('Fout bij verwijderen: ' + data.error, 'error');
+            }
+        } catch (error) {
+            showNotification('Fout bij verwijderen: ' + error.message, 'error');
+        }
+    }
+
+    async function confirmFlushAll() {
+        if (!confirm('Weet je ZEKER dat je ALLE documenten wilt verwijderen?\n\nDeze actie kan niet ongedaan worden gemaakt!')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/flush_documents', {
+                method: 'POST'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showNotification(data.message, 'success');
+                loadDocuments();
+            } else {
+                showNotification('Fout: ' + data.error, 'error');
+            }
+        } catch (error) {
+            showNotification('Fout: ' + error.message, 'error');
+        }
+    }
+
+    // Initialize
+    loadDocuments();
+</script>
+{% endblock %}

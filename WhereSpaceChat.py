@@ -466,17 +466,8 @@ def index():
 # Placeholder routes for navigation menu (Coming Soon pages)
 @app.route('/documents')
 def documents_page():
-    """Documents management page (placeholder)."""
-    return render_template('coming_soon.html', 
-                         page='Documenten', 
-                         description='View and manage all indexed documents',
-                         icon='📋',
-                         features=[
-                             'Browse all indexed documents',
-                             'Search and filter by type',
-                             'Delete individual documents',
-                             'View document details and chunks'
-                         ])
+    """Documents management page."""
+    return render_template('documents.html')
 
 
 @app.route('/ingest')
@@ -1029,10 +1020,10 @@ def set_model():
             
         except requests.exceptions.ConnectionError:
             # Ollama not accessible, but allow switch anyway (user might fix it)
-            logger.warning(f"Ollama not accessible, but switching model to {model_id} anyway")
+            logger.warning(f"Ollama not accessible, maar model verandert naar {model_id}")
             set_current_model(model_id)
             
-            # Still verify persistence
+            # Nog steeds persistentie verifiëren
             if get_current_model() == model_id and MODEL_CONFIG_FILE.exists():
                 verification_passed = True
             else:
@@ -1042,7 +1033,7 @@ def set_model():
                 'success': True,
                 'model': model_id,
                 'message': f'Model switched to {model_id}',
-                'warning': 'Could not verify with Ollama - make sure model is available',
+                'warning': 'Kon model niet verifiëren bij Ollama - zorg dat model beschikbaar is',
                 'verified': verification_passed,
                 'tested': False
             })
@@ -1219,6 +1210,129 @@ def list_documents():
         
     except Exception as e:
         logger.error(f"Error listing documents: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/document/details', methods=['GET'])
+def get_document_details():
+    """Get detailed information about a specific document including all its chunks."""
+    try:
+        file_path = request.args.get('path', '')
+        
+        if not file_path:
+            return jsonify({'error': 'No file path specified'}), 400
+        
+        conn = psycopg2.connect(
+            host=PG_HOST,
+            port=PG_PORT,
+            database=PG_DATABASE,
+            user=PG_USER,
+            password=PG_PASSWORD
+        )
+        
+        with conn.cursor() as cur:
+            # Get document info
+            cur.execute(sql.SQL("""
+                SELECT DISTINCT ON (file_path)
+                    file_name,
+                    file_path,
+                    file_type,
+                    file_size,
+                    created_at,
+                    (SELECT COUNT(*) FROM {} d2 WHERE d2.file_path = d1.file_path) as chunk_count
+                FROM {} d1
+                WHERE file_path = %s
+                ORDER BY file_path, created_at DESC;
+            """).format(sql.Identifier(PG_TABLE), sql.Identifier(PG_TABLE)), [file_path])
+            
+            doc_row = cur.fetchone()
+            
+            if not doc_row:
+                return jsonify({'error': 'Document not found'}), 404
+            
+            # Format file size
+            file_size = doc_row[3]
+            if file_size < 1024:
+                size_str = f"{file_size} B"
+            elif file_size < 1024 * 1024:
+                size_str = f"{file_size / 1024:.2f} KB"
+            else:
+                size_str = f"{file_size / (1024 * 1024):.2f} MB"
+            
+            document = {
+                'file_name': doc_row[0],
+                'file_path': doc_row[1],
+                'file_type': doc_row[2],
+                'file_size': file_size,
+                'file_size_formatted': size_str,
+                'chunk_count': doc_row[5],
+                'ingested_at': doc_row[4].strftime('%Y-%m-%d %H:%M:%S') if doc_row[4] else None
+            }
+            
+            # Get all chunks
+            cur.execute(sql.SQL("""
+                SELECT chunk_index, content_preview
+                FROM {}
+                WHERE file_path = %s
+                ORDER BY chunk_index;
+            """).format(sql.Identifier(PG_TABLE)), [file_path])
+            
+            chunks = []
+            for chunk_row in cur.fetchall():
+                chunks.append({
+                    'index': chunk_row[0],
+                    'preview': chunk_row[1]
+                })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'document': document,
+            'chunks': chunks
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting document details: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/document/delete', methods=['POST'])
+def delete_document():
+    """Delete a specific document and all its chunks from the database."""
+    try:
+        data = request.json
+        file_path = data.get('file_path', '')
+        
+        if not file_path:
+            return jsonify({'error': 'No file path specified'}), 400
+        
+        conn = psycopg2.connect(
+            host=PG_HOST,
+            port=PG_PORT,
+            database=PG_DATABASE,
+            user=PG_USER,
+            password=PG_PASSWORD
+        )
+        
+        with conn.cursor() as cur:
+            # Delete all chunks for this document
+            cur.execute(sql.SQL("DELETE FROM {} WHERE file_path = %s;").format(sql.Identifier(PG_TABLE)), [file_path])
+            deleted_count = cur.rowcount
+            conn.commit()
+        
+        conn.close()
+        
+        logger.info(f"Deleted document {file_path} ({deleted_count} chunks)")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Document verwijderd ({deleted_count} chunks)',
+            'deleted_chunks': deleted_count
+        })
+        
+    except Exception as e:
+        logger.error(f"Error deleting document: {e}")
         return jsonify({'error': str(e)}), 500
 
 
