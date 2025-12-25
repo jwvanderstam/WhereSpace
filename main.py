@@ -112,7 +112,7 @@ def show_menu():
     print("   - Deploy to production server")
     print()
     print("7. ?? Beheer LLM modellen")
-    print("   - Bekijk geïnstalleerde modellen")
+    print("   - Bekijk geinstalleerde modellen")
     print("   - Download nieuwe modellen")
     print("   - Verwijder modellen")
     print()
