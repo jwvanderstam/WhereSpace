@@ -10,14 +10,23 @@
 
 ## 🌟 Features
 
-### Document Processing
+### 🎯 Unified Web Interface
+- ✅ **Chat Interface**: RAG mode & Direct LLM conversations
+- ✅ **Document Management**: View, search, and manage indexed documents
+- ✅ **Smart Indexing**: Upload and process documents with progress tracking
+- ✅ **Storage Analysis**: Scan and analyze local storage for documents
+- ✅ **Model Management**: Browse, download, and manage Ollama models
+- ✅ **Performance Evaluation**: Test and optimize RAG retrieval quality
+- ✅ **Settings & Deployment**: Configure system and deploy to production
+
+### 📄 Document Processing
 - ✅ **Multi-format support**: PDF, DOCX, TXT, MD, CSV
 - ✅ **Smart chunking**: Overlap for context preservation
 - ✅ **Parallel processing**: 6-8x faster with batch embeddings
 - ✅ **Metadata extraction**: File info and timestamps
 - ✅ **Progress tracking**: Real-time ingestion monitoring
 
-### Web Chat Interface
+### 💬 Advanced Chat Features
 - ✅ **RAG Mode**: Query your indexed documents with AI
 - ✅ **Direct LLM Mode**: General questions without context
 - ✅ **Model Switcher**: Choose between Llama, Mistral, Gemma, Qwen
@@ -25,7 +34,7 @@
 - ✅ **Formatted Responses**: Clean, structured output with markdown
 - ✅ **Persistent Settings**: Model selection saved across sessions
 
-### Performance
+### ⚡ Performance
 - ✅ **Connection Pooling**: 25-40% faster queries
 - ✅ **Query Caching**: <1ms for repeated queries
 - ✅ **Parallel Embeddings**: 6-8x faster ingestion
@@ -76,8 +85,8 @@ CREATE EXTENSION vector;
 # Install Ollama (https://ollama.ai)
 
 # Pull required models
-ollama pull nomic-embed-text  # For embeddings
-ollama pull llama3.1          # For chat (default)
+ollama pull nomic-embed-text  # For embeddings (required)
+ollama pull llama3.1          # For chat (recommended)
 
 # Optional: Pull additional models
 ollama pull mistral
@@ -85,81 +94,79 @@ ollama pull gemma2
 ollama pull qwen2.5
 ```
 
-### 5. Run the Application
+### 5. Start the Application
 
-**Windows:**
+**Simplified Launch (Recommended):**
+```bash
+python main.py
+```
+
+The web interface will automatically start at `http://127.0.0.1:5000`
+
+**Windows Quick Start:**
 ```bash
 start.bat
 ```
 
-**Linux/Mac:**
+**Linux/Mac Quick Start:**
 ```bash
 chmod +x start.sh
 ./start.sh
-```
-
-**Python:**
-```bash
-python main.py
 ```
 
 ---
 
 ## 📖 Usage
 
-### Main Menu
+### Web Interface (New!)
 
-When you run `python main.py`, you'll see:
+Starting the application with `python main.py` launches the modern web interface:
 
 ```
-============================================================
+====================================================================
     JW zijn babbeldoos - AI Document Chat System
-============================================================
+====================================================================
 
-HOOFDMENU
-============================================================
+🚀 Starting web interface...
 
-1. 🔍 Analyseer lokale opslag
-   - Scan directories voor bestanden
-   - Bekijk storage verdeling
-   - Identificeer documenten voor indexering
+📋 Features available:
+   • Chat Interface - RAG mode & Direct LLM mode
+   • Document Management - View and manage indexed documents
+   • Document Indexing - Index new documents from directories
+   • Storage Analysis - Analyze local storage and find documents
+   • Model Management - Browse, download, and manage LLM models
+   • RAG Evaluation - Test and evaluate retrieval performance
+   • Settings & Deployment - Configure and deploy the system
 
-2. 📚 Indexeer documenten
-   - Selecteer directory met documenten
-   - Extract en chunk tekst
-   - Genereer embeddings en sla op
+====================================================================
 
-3. 💬 Start web chat interface
-   - RAG mode: Query geindexeerde documenten
-   - Direct LLM mode: Algemene vragen
-   - Model switcher (Llama, Mistral, Gemma, Qwen)
+🌐 Web interface will be available at: http://127.0.0.1:5000
 
-4. 📊 Evalueer RAG performance
-   - Test retrieval kwaliteit
-   - Bekijk Hit Rate en MRR metrics
+💡 Navigate using the sidebar menu
+⏹  Press Ctrl+C to stop the server
 
-5. 📋 Bekijk geindexeerde documenten
-   - Toon alle documenten in database
-   - Bekijk chunk counts en details
-
-0. 🚪 Afsluiten
+====================================================================
 ```
 
 ### Quick Workflow
 
-1. **First time**: Choose option **1** to analyze your storage
-2. **Index documents**: Choose option **2** and select a directory
-3. **Start chatting**: Choose option **3** to launch web interface at `http://127.0.0.1:5000`
-4. **Evaluate**: Choose option **4** to test retrieval quality
+1. **Open Browser**: Navigate to `http://127.0.0.1:5000`
+2. **Index Documents**: Click "Indexeren" in sidebar → Enter directory path
+3. **Start Chatting**: Click "Chat" in sidebar → Ask questions
+4. **Manage Models**: Click "Model Beheer" to download/manage LLM models
+5. **View Documents**: Click "Documenten" to see indexed files
+6. **Analyze Storage**: Click "Opslag Analyse" to scan directories
+7. **Evaluate Performance**: Click "RAG Evaluatie" to test quality
 
-### Web Interface Only
+### Navigation Menu
 
-To start only the web chat interface:
-
-```bash
-python WhereSpaceChat.py
-# Navigate to: http://127.0.0.1:5000
-```
+- 💬 **Chat** - Main chat interface with RAG and Direct modes
+- 📋 **Documenten** - View and manage all indexed documents
+- 📚 **Indexeren** - Upload and index new documents
+- 🔍 **Opslag Analyse** - Scan local storage for documents
+- 🤖 **Model Beheer** - Manage Ollama LLM models
+- 📊 **RAG Evaluatie** - Performance testing and metrics
+- ⚙️ **Instellingen** - System settings and deployment
 
 ---
 
@@ -167,36 +174,43 @@ python WhereSpaceChat.py
 
 ```
 WhereSpace/
-├── 📄 Core Files (6 Python files)
-│   ├── main.py                      # Main menu application
+├── 📄 Core Files
+│   ├── main.py                      # Simplified web launcher
 │   ├── WhereSpace.py                # Document ingestion engine
-│   ├── WhereSpaceChat.py            # Web chat interface
+│   ├── WhereSpaceChat.py            # Web interface & API
+│   ├── model_manager.py             # Ollama model management
 │   ├── batch_embeddings.py          # Parallel embedding generation
 │   ├── optimized_rag_query.py       # Performance-optimized queries
 │   └── evaluate_rag.py              # RAG evaluation metrics
 │
 ├── 📂 templates/                    # Web UI templates
-│   └── index.html                   # Chat interface
+│   ├── base.html                    # Base template with navigation
+│   ├── index.html                   # Chat interface
+│   ├── documents.html               # Document management (planned)
+│   ├── ingest.html                  # Document indexing (planned)
+│   ├── storage.html                 # Storage analysis (planned)
+│   ├── models.html                  # Model management (planned)
+│   ├── evaluation.html              # RAG evaluation (planned)
+│   └── settings.html                # Settings page (planned)
 │
-├── 📂 config/                       # Configuration files
+├── 📂 static/                       # Static assets
+│   ├── chat.js                      # Chat functionality
+│   └── common.js                    # Shared JavaScript (planned)
+│
+├── 📂 config/                       # Configuration
 │   ├── requirements.txt             # Python dependencies
 │   ├── .gitignore                   # Git ignore rules
 │   └── .model_config.json           # Persistent model selection
 │
 ├── 📂 docs/                         # Documentation (20+ guides)
 │   ├── INSTALLATION.md              # Setup instructions
+│   ├── WEB_INTERFACE_MIGRATION.md   # Web UI migration plan
 │   ├── QUICK_REFERENCE.md           # Quick commands
-│   ├── TROUBLESHOOTING.md           # Common issues
-│   └── ... (17 more guides)
+│   └── TROUBLESHOOTING.md           # Common issues
 │
-├── 📂 tests/                        # Test & utility scripts
-│   ├── check_dependencies.py        # Dependency checker
-│   ├── test_model_persistence.py    # Model tests
-│   └── ... (5 more utilities)
-│
-└── 📂 scripts/                      # Utility scripts
-    ├── start.bat                    # Windows launcher
-    └── start.sh                     # Linux/Mac launcher
+└── 📂 tests/                        # Test & utility scripts
+    ├── check_dependencies.py        # Dependency checker
+    └── test_model_persistence.py    # Model tests
 ```
 
 ---
@@ -219,6 +233,14 @@ PG_PASSWORD = "your_password"
 
 ```python
 OLLAMA_EMBED_MODEL = "nomic-embed-text"
+OLLAMA_URL = "http://localhost:11434"
+```
+
+### Web Server
+
+```python
+WEB_HOST = "127.0.0.1"
+WEB_PORT = 5000
 ```
 
 ---
@@ -231,6 +253,7 @@ OLLAMA_EMBED_MODEL = "nomic-embed-text"
 | **Query Response** | 800ms | 250ms | **3.2x faster** |
 | **Cached Query** | 800ms | <5ms | **160x faster** |
 | **Concurrent Users** | 2 | 15 | **7.5x more** |
+| **UI Response** | Terminal | Web Browser | **Modern UX** |
 
 ---
 
@@ -253,7 +276,8 @@ python tests/test_model_persistence.py
 
 All documentation is in the `docs/` directory (20+ guides):
 
-- 📘 [INSTALLATION.md](docs/INSTALLATION.md) - Complete setup
+- 📘 [INSTALLATION.md](docs/INSTALLATION.md) - Complete setup guide
+- 🌐 [WEB_INTERFACE_MIGRATION.md](docs/WEB_INTERFACE_MIGRATION.md) - Web UI architecture
 - ⚡ [QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md) - Quick commands
 - 🔧 [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) - Common issues
 - 📊 [COMPREHENSIVE_OPTIMIZATION_GUIDE.md](docs/COMPREHENSIVE_OPTIMIZATION_GUIDE.md) - Performance tuning
@@ -279,6 +303,24 @@ python tests/test_postgres_connection.py
 ollama serve
 ollama list
 ```
+
+**Port 5000 already in use:**
+```bash
+# Change WEB_PORT in WhereSpaceChat.py
+WEB_PORT = 5001  # Or any available port
+```
+
+---
+
+## 🆕 What's New in v3.0
+
+- ✨ **Modern Web Interface**: All features now in browser
+- 🎨 **Unified Navigation**: Sidebar menu for easy access
+- 🚀 **Simplified Launch**: Just run `python main.py`
+- 📱 **Responsive Design**: Works on desktop and mobile
+- 💾 **Model Management**: Built-in Ollama model browser
+- 📊 **Real-time Progress**: Live updates for all operations
+- 🔐 **Better Error Handling**: Clear messages with solutions
 
 ---
 
@@ -306,4 +348,4 @@ MIT License - see [LICENSE](LICENSE) file
 
 **Made with ❤️ for document intelligence**
 
-*Version: 2.0.0 | Last Updated: December 24, 2025*
+*Version: 3.0.0 | Last Updated: December 25, 2025*

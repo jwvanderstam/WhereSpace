@@ -4,55 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JW zijn babbeldoos - AI Chat Interface</title>
+    <link rel="stylesheet" href="/static/styles.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 900px;
-            height: 90vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px 30px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .header h1 {
-            font-size: 24px;
-            font-weight: 600;
-        }
-
-        .header-right {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
         .model-selector {
             background: rgba(255, 255, 255, 0.2);
             color: white;
@@ -67,19 +20,30 @@
             min-width: 150px;
         }
 
-        .model-selector:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.3);
-            border-color: rgba(255, 255, 255, 0.5);
-        }
-
-        .model-selector:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
         .model-selector option {
             background: #667eea;
             color: white;
+        }
+
+        .refresh-models-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            font-size: 16px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .refresh-models-btn.spinning {
+            animation: spin 1s linear infinite;
         }
 
         .status-badge {
@@ -90,11 +54,7 @@
             backdrop-filter: blur(10px);
             cursor: pointer;
             transition: all 0.3s;
-        }
-
-        .status-badge:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.05);
+            color: white;
         }
 
         .status-badge.active {
@@ -105,14 +65,24 @@
             background: rgba(244, 67, 54, 0.8);
         }
 
+        /* Chat specific styles */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 160px);
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
         .toolbar {
             background: white;
-            padding: 15px 30px;
+            padding: 15px 20px;
             border-bottom: 1px solid #e0e0e0;
             display: flex;
             gap: 10px;
             align-items: center;
-            flex-wrap: wrap;
         }
 
         .mode-selector {
@@ -153,33 +123,49 @@
             color: white;
         }
 
-        .toolbar-btn.danger {
-            border-color: #f44336;
-            color: #f44336;
-        }
-
-        .toolbar-btn.danger:hover {
-            background: #f44336;
-            color: white;
-        }
-
         .chat-area {
             flex: 1;
             overflow-y: auto;
-            padding: 30px;
+            padding: 20px;
             background: #f5f5f5;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 15px;
+        }
+
+        #query-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        #query-input:focus {
+            border-color: #667eea;
+        }
+
+        #send-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
         }
 
         .message {
             margin-bottom: 20px;
             display: flex;
             gap: 15px;
-            animation: fadeIn 0.3s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         .message.user {
@@ -210,544 +196,18 @@
             max-width: 70%;
             padding: 15px 20px;
             border-radius: 18px;
-            line-height: 1.8;
+            line-height: 1.6;
         }
 
         .message.user .message-content {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border-bottom-right-radius: 4px;
         }
 
         .message.assistant .message-content {
             background: white;
             color: #333;
-            border-bottom-left-radius: 4px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Enhanced text formatting support */
-        .message.assistant .message-content h1,
-        .message.assistant .message-content h2,
-        .message.assistant .message-content h3 {
-            color: #667eea;
-            margin-top: 15px;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .message.assistant .message-content h1 {
-            font-size: 18px;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 5px;
-        }
-
-        .message.assistant .message-content h2 {
-            font-size: 16px;
-        }
-
-        .message.assistant .message-content h3 {
-            font-size: 14px;
-        }
-
-        .message.assistant .message-content ul,
-        .message.assistant .message-content ol {
-            margin: 10px 0;
-            padding-left: 25px;
-        }
-
-        .message.assistant .message-content li {
-            margin: 5px 0;
-            line-height: 1.6;
-        }
-
-        .message.assistant .message-content ul li {
-            list-style-type: disc;
-        }
-
-        .message.assistant .message-content ol li {
-            list-style-type: decimal;
-        }
-
-        .message.assistant .message-content p {
-            margin: 10px 0;
-        }
-
-        .message.assistant .message-content strong,
-        .message.assistant .message-content b {
-            font-weight: 700;
-            color: #333;
-        }
-
-        .message.assistant .message-content em,
-        .message.assistant .message-content i {
-            font-style: italic;
-        }
-
-        .message.assistant .message-content code {
-            background: #f4f4f4;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-        }
-
-        .message.assistant .message-content pre {
-            background: #f4f4f4;
-            padding: 12px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 10px 0;
-        }
-
-        .message.assistant .message-content pre code {
-            background: none;
-            padding: 0;
-        }
-
-        .message.assistant .message-content blockquote {
-            border-left: 4px solid #667eea;
-            padding-left: 15px;
-            margin: 10px 0;
-            color: #666;
-            font-style: italic;
-        }
-
-        .message.assistant .message-content hr {
-            border: none;
-            border-top: 1px solid #e0e0e0;
-            margin: 15px 0;
-        }
-
-        .mode-badge {
-            display: inline-block;
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-bottom: 5px;
-            background: #667eea;
-            color: white;
-        }
-
-        .mode-badge.direct {
-            background: #ff9800;
-        }
-
-        .mode-badge.system {
-            background: #4caf50;
-        }
-
-        .model-badge {
-            display: inline-block;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 8px;
-            margin-left: 5px;
-            background: rgba(255, 255, 255, 0.3);
-            color: white;
-        }
-
-        .sources {
-            margin-top: 15px;
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 12px;
-            border-left: 4px solid #667eea;
-        }
-
-        .sources-title {
-            font-weight: 600;
-            color: #667eea;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .source-item {
-            padding: 8px 0;
-            font-size: 13px;
-            color: #666;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .source-item:last-child {
-            border-bottom: none;
-        }
-
-        .source-file {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .source-similarity {
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 11px;
-            margin-left: 8px;
-        }
-
-        .input-area {
-            padding: 20px 30px;
-            background: white;
-            border-top: 1px solid #e0e0e0;
-            display: flex;
-            gap: 15px;
-        }
-
-        #query-input {
-            flex: 1;
-            padding: 15px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 15px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        #query-input:focus {
-            border-color: #667eea;
-        }
-
-        #send-btn {
-            padding: 15px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        #send-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        #send-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .typing-indicator {
-            display: none;
-            padding: 15px 20px;
-            background: white;
-            border-radius: 18px;
-            border-bottom-left-radius: 4px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            width: fit-content;
-        }
-
-        .typing-indicator.show {
-            display: block;
-        }
-
-        .typing-indicator span {
-            height: 10px;
-            width: 10px;
-            background: #667eea;
-            border-radius: 50%;
-            display: inline-block;
-            margin: 0 2px;
-            animation: typing 1.4s infinite;
-        }
-
-        .typing-indicator span:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .typing-indicator span:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-10px); }
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal.show {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            max-width: 500px;
-            width: 90%;
-        }
-
-        .modal-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-
-        .modal-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 14px;
-            margin-bottom: 20px;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-
-        .modal-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .modal-btn.primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .modal-btn.secondary {
-            background: #e0e0e0;
-            color: #333;
-        }
-
-        .progress-container {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            z-index: 2000;
-            min-width: 400px;
-            display: none;
-        }
-
-        .progress-container.show {
-            display: block;
-        }
-
-        .progress-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 30px;
-            background: #f0f0f0;
-            border-radius: 15px;
-            overflow: hidden;
-            margin-bottom: 10px;
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .progress-text {
-            text-align: center;
-            font-size: 14px;
-            color: #666;
-        }
-
-        .documents-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1500;
-        }
-
-        .documents-modal.show {
-            display: flex;
-        }
-
-        .documents-modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            max-width: 700px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .documents-modal-title {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .close-modal-btn {
-            background: none;
-            border: none;
-            font-size: 28px;
-            cursor: pointer;
-            color: #999;
-            padding: 0;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .close-modal-btn:hover {
-            color: #333;
-        }
-
-        .document-list {
-            list-style: none;
-        }
-
-        .document-item {
-            padding: 15px;
-            border: 1px solid #e0e0e0;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            transition: all 0.3s;
-        }
-
-        .document-item:hover {
-            background: #f9f9f9;
-            border-color: #667eea;
-        }
-
-        .document-name {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .document-meta {
-            font-size: 12px;
-            color: #666;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .document-meta-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .empty-state {
-            text-align: center;
-            color: #999;
-            padding: 60px 20px;
-        }
-
-        .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-        }
-
-        .empty-state h2 {
-            font-size: 24px;
-            color: #666;
-            margin-bottom: 10px;
-        }
-
-        .empty-state p {
-            font-size: 16px;
-        }
-
-        .model-selector {
-            background: #f0f0f0;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 8px 12px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: border-color 0.3s;
-        }
-
-        .model-selector:focus {
-            border-color: #667eea;
-            outline: none;
-        }
-
-        .refresh-models-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 50%;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s;
-            font-size: 16px;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .refresh-models-btn:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.3);
-            border-color: rgba(255, 255, 255, 0.5);
-            transform: rotate(180deg);
-        }
-
-        .refresh-models-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .refresh-models-btn.spinning {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -764,7 +224,7 @@
                 </button>
                 <div class="status-badge {% if docs_exist %}active{% else %}inactive{% endif %}" 
                      id="status-badge"
-                     onclick="showDocumentsModal()"
+                     onclick="window.location.href='/documents'"
                      title="Click to view documents">
                     {% if docs_exist %}
                         {{ doc_count }} documenten
@@ -775,32 +235,30 @@
             </div>
         </div>
 
-        <div class="toolbar">
-            <div class="mode-selector">
-                <button class="mode-btn active" data-mode="rag">RAG Mode</button>
-                <button class="mode-btn" data-mode="direct">Direct LLM</button>
+        <div class="chat-container">
+            <div class="toolbar">
+                <div class="mode-selector">
+                    <button class="mode-btn active" data-mode="rag">RAG Mode</button>
+                    <button class="mode-btn" data-mode="direct">Direct LLM</button>
+                </div>
             </div>
-            <button class="toolbar-btn" onclick="showIngestModal()">Indexeer Directory</button>
-            <button class="toolbar-btn danger" onclick="flushDocuments()">Verwijder Alle Documenten</button>
-        </div>
 
-        <div class="chat-area" id="chat-area">
-            <div class="empty-state">
-                <div class="empty-state-icon">&#128172;</div>
-                <h2>Welkom bij JW zijn babbeldoos</h2>
-                <p>Kies een mode en stel een vraag</p>
+            <div class="chat-area" id="chat-area">
+                <div style="text-align: center; padding: 60px 20px; color: #999;">
+                    <div style="font-size: 64px; margin-bottom: 20px;">💬</div>
+                    <h2 style="font-size: 24px; color: #666; margin-bottom: 10px;">Welkom bij JW zijn babbeldoos</h2>
+                    <p style="font-size: 16px;">Kies een mode en stel een vraag</p>
+                </div>
             </div>
-        </div>
 
-        <div class="input-area">
-            <input 
-                type="text" 
-                id="query-input" 
-                placeholder="Stel een vraag..." 
-            >
-            <button id="send-btn">
-                Verstuur
-            </button>
+            <div class="input-area">
+                <input 
+                    type="text" 
+                    id="query-input" 
+                    placeholder="Stel een vraag..." 
+                >
+                <button id="send-btn">Verstuur</button>
+            </div>
         </div>
     </div>
 
@@ -843,690 +301,6 @@
         <div class="progress-text" id="progress-text">Voorbereiden...</div>
     </div>
 
-    <script>
-        const chatArea = document.getElementById('chat-area');
-        const queryInput = document.getElementById('query-input');
-        const sendBtn = document.getElementById('send-btn');
-        const modelSelector = document.getElementById('model-selector');
-        let currentMode = 'rag';
-        let currentModel = 'llama3.1';
-
-        // Simple markdown-like parser for better formatting
-        function formatText(text) {
-            // Convert markdown-style formatting to HTML
-            let formatted = text;
-            
-            // Headers (## Header)
-            formatted = formatted.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
-            formatted = formatted.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
-            formatted = formatted.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
-            
-            // Bold (**text** or __text__)
-            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            formatted = formatted.replace(/__(.*?)__/g, '<strong>$1</strong>');
-            
-            // Italic (*text* or _text_)
-            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
-            formatted = formatted.replace(/_(.*?)_/g, '<em>$1</em>');
-            
-            // Bullet points (• or - or *)
-            formatted = formatted.replace(/^[•\-\*] (.*?)$/gm, '<li>$1</li>');
-            
-            // Numbered lists (1. item)
-            formatted = formatted.replace(/^\d+\. (.*?)$/gm, '<li>$1</li>');
-            
-            // Wrap consecutive <li> elements in <ul>
-            formatted = formatted.replace(/(<li>.*?<\/li>\s*)+/gs, function(match) {
-                // Check if it starts with a number pattern before the conversion
-                if (match.match(/^\d+\./)) {
-                    return '<ol>' + match + '</ol>';
-                }
-                return '<ul>' + match + '</ul>';
-            });
-            
-            // Code blocks (```code```
-            formatted = formatted.replace(/```(.*?)```/gs, '<pre><code>$1</code></pre>');
-            
-            // Inline code (`code`)
-            formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>');
-            
-            // Line breaks (double newline = paragraph)
-            formatted = formatted.replace(/\n\n/g, '</p><p>');
-            formatted = '<p>' + formatted + '</p>';
-            
-            // Clean up empty paragraphs
-            formatted = formatted.replace(/<p><\/p>/g, '');
-            formatted = formatted.replace(/<p>\s*<\/p>/g, '');
-            
-            return formatted;
-        }
-
-        // Load available models on startup
-        async function loadModels() {
-            try {
-                const response = await fetch('/api/models');
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Update current model from server
-                    currentModel = data.current_model;
-                    
-                    // Save to localStorage for persistence
-                    localStorage.setItem('selectedModel', currentModel);
-                    
-                    // Clear and rebuild dropdown
-                    modelSelector.innerHTML = '';
-                    
-                    if (data.models && data.models.length > 0) {
-                        // Group models by type for better organization
-                        const modelGroups = {
-                            'llama': [],
-                            'mistral': [],
-                            'gemma': [],
-                            'qwen': [],
-                            'other': []
-                        };
-                        
-                        // Categorize models
-                        data.models.forEach(model => {
-                            const lowerId = model.id.toLowerCase();
-                            if (lowerId.includes('llama')) {
-                                modelGroups.llama.push(model);
-                            } else if (lowerId.includes('mistral')) {
-                                modelGroups.mistral.push(model);
-                            } else if (lowerId.includes('gemma')) {
-                                modelGroups.gemma.push(model);
-                            } else if (lowerId.includes('qwen')) {
-                                modelGroups.qwen.push(model);
-                            } else {
-                                modelGroups.other.push(model);
-                            }
-                        });
-                        
-                        // Add models to dropdown (grouped)
-                        let modelsAdded = 0;
-                        
-                        for (const [groupName, models] of Object.entries(modelGroups)) {
-                            if (models.length > 0) {
-                                // Add group label if we have multiple groups
-                                if (data.models.length > 5 && modelsAdded > 0) {
-                                    const separator = document.createElement('option');
-                                    separator.disabled = true;
-                                    separator.textContent = '──────────';
-                                    modelSelector.appendChild(separator);
-                                }
-                                
-                                models.forEach(model => {
-                                    const option = document.createElement('option');
-                                    option.value = model.id;
-                                    
-                                    // Create descriptive label
-                                    let label = model.name;
-                                    
-                                    // Add size info if available
-                                    if (model.size) {
-                                        const sizeGB = (model.size / (1024 * 1024 * 1024)).toFixed(1);
-                                        label += ` (${sizeGB}GB)`;
-                                    }
-                                    
-                                    option.textContent = label;
-                                    
-                                    // Select current model (from server or localStorage)
-                                    if (model.id === currentModel || model.full_name === currentModel) {
-                                        option.selected = true;
-                                    }
-                                    
-                                    modelSelector.appendChild(option);
-                                    modelsAdded++;
-                                });
-                            }
-                        }
-                        
-                        // Show count in console
-                        console.log(`Loaded ${modelsAdded} models from Ollama`);
-                        console.log(`Current model: ${currentModel}`);
-                        
-                        // Show warning if using default list
-                        if (data.warning) {
-                            console.warn(data.warning);
-                        }
-                        
-                    } else {
-                        // Fallback: add default option
-                        const option = document.createElement('option');
-                        option.value = currentModel;
-                        option.textContent = currentModel.charAt(0).toUpperCase() + currentModel.slice(1);
-                        option.selected = true;
-                        modelSelector.appendChild(option);
-                        
-                        console.warn('No models returned from API, using current model only');
-                    }
-                } else {
-                    console.error('Failed to load models:', data.error);
-                    
-                    // Try to restore from localStorage
-                    const savedModel = localStorage.getItem('selectedModel');
-                    if (savedModel) {
-                        currentModel = savedModel;
-                        console.log(`Restored model from localStorage: ${currentModel}`);
-                    }
-                    
-                    // Fallback: show current model
-                    const option = document.createElement('option');
-                    option.value = currentModel;
-                    option.textContent = currentModel.charAt(0).toUpperCase() + currentModel.slice(1);
-                    option.selected = true;
-                    modelSelector.appendChild(option);
-                }
-            } catch (error) {
-                console.error('Error loading models:', error);
-                
-                // Try to restore from localStorage
-                const savedModel = localStorage.getItem('selectedModel');
-                if (savedModel) {
-                    currentModel = savedModel;
-                    console.log(`Restored model from localStorage: ${currentModel}`);
-                }
-                
-                // Fallback: add current model
-                const option = document.createElement('option');
-                option.value = currentModel;
-                option.textContent = currentModel.charAt(0).toUpperCase() + currentModel.slice(1);
-                option.selected = true;
-                modelSelector.appendChild(option);
-            }
-        }
-
-        // Switch model with better feedback and persistence
-        async function switchModel() {
-            const selectedModel = modelSelector.value;
-            const previousModel = currentModel;
-            
-            if (selectedModel === previousModel) {
-                return; // No change
-            }
-            
-            try {
-                // Disable selector during switch
-                modelSelector.disabled = true;
-                
-                const response = await fetch('/api/set_model', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ model: selectedModel })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    currentModel = selectedModel;
-                    
-                    // Save to localStorage for session persistence
-                    localStorage.setItem('selectedModel', currentModel);
-                    
-                    // Show success message
-                    let message = `Model switched to ${selectedModel}`;
-                    if (data.warning) {
-                        message += ` (${data.warning})`;
-                    }
-                    addMessage(message, false, null, 'system');
-                    
-                    console.log('✓ Model switched and persisted:', selectedModel);
-                    
-                    // Update badge on any existing messages (visual feedback)
-                    document.querySelectorAll('.model-badge').forEach(badge => {
-                        badge.textContent = currentModel;
-                    });
-                    
-                } else {
-                    // Switch failed
-                    modelSelector.value = previousModel; // Revert dropdown
-                    
-                    let errorMsg = data.error || 'Unknown error';
-                    
-                    // Check if model not found
-                    if (data.available_models) {
-                        errorMsg += '\n\nAvailable models: ' + data.available_models.join(', ');
-                    }
-                    
-                    if (data.suggestion) {
-                        errorMsg += '\n\n' + data.suggestion;
-                    }
-                    
-                    alert('Error switching model:\n' + errorMsg);
-                    console.error('Model switch failed:', data);
-                }
-            } catch (error) {
-                // Network or other error
-                modelSelector.value = previousModel; // Revert dropdown
-                alert('Error switching model: ' + error.message);
-                console.error('Model switch error:', error);
-            } finally {
-                // Re-enable selector
-                modelSelector.disabled = false;
-            }
-        }
-
-        // Load models on page load (with retry)
-        async function initializeModels() {
-            // Try to restore from localStorage first
-            const savedModel = localStorage.getItem('selectedModel');
-            if (savedModel) {
-                currentModel = savedModel;
-                console.log(`Pre-loaded model from localStorage: ${currentModel}`);
-            }
-            
-            await loadModels();
-            
-            // Refresh models every 60 seconds to catch newly pulled models
-            setInterval(loadModels, 60000);
-        }
-
-        // Initialize when page loads
-        initializeModels();
-
-        // Manual refresh function
-        async function refreshModels() {
-            const refreshBtn = document.getElementById('refresh-models-btn');
-            refreshBtn.disabled = true;
-            refreshBtn.classList.add('spinning');
-            
-            try {
-                await loadModels();
-                console.log('Models refreshed');
-                
-                // Show brief success indicator
-                setTimeout(() => {
-                    refreshBtn.classList.remove('spinning');
-                    refreshBtn.textContent = '✓';
-                    setTimeout(() => {
-                        refreshBtn.textContent = '↻';
-                    }, 1000);
-                }, 500);
-            } catch (error) {
-                console.error('Error refreshing models:', error);
-                refreshBtn.classList.remove('spinning');
-                refreshBtn.textContent = '✗';
-                setTimeout(() => {
-                    refreshBtn.textContent = '↻';
-                }, 2000);
-            } finally {
-                refreshBtn.disabled = false;
-            }
-        }
-
-        // Mode selector
-        document.querySelectorAll('.mode-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentMode = btn.dataset.mode;
-                console.log('Mode switched to:', currentMode);
-            });
-        });
-
-        function removeEmptyState() {
-            const emptyState = document.querySelector('.empty-state');
-            if (emptyState) {
-                emptyState.remove();
-            }
-        }
-
-        function addMessage(content, isUser = false, sources = null, mode = null) {
-            removeEmptyState();
-
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
-
-            const avatar = document.createElement('div');
-            avatar.className = 'message-avatar';
-            avatar.textContent = isUser ? 'U' : 'AI';
-
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
-
-            if (!isUser && mode) {
-                const badgeContainer = document.createElement('div');
-                
-                const modeBadge = document.createElement('span');
-                modeBadge.className = `mode-badge ${mode}`;
-                modeBadge.textContent = mode === 'rag' ? 'RAG Mode' : mode === 'direct' ? 'Direct LLM' : 'System';
-                badgeContainer.appendChild(modeBadge);
-                
-                // Add model badge
-                const modelBadge = document.createElement('span');
-                modelBadge.className = 'model-badge';
-                modelBadge.textContent = currentModel;
-                badgeContainer.appendChild(modelBadge);
-                
-                contentDiv.appendChild(badgeContainer);
-            }
-
-            const textDiv = document.createElement('div');
-            
-            // Format text for assistant messages, plain text for user messages
-            if (!isUser && mode !== 'system') {
-                textDiv.innerHTML = formatText(content);
-            } else {
-                textDiv.textContent = content;
-            }
-            
-            contentDiv.appendChild(textDiv);
-
-            messageDiv.appendChild(avatar);
-            messageDiv.appendChild(contentDiv);
-
-            if (sources && sources.length > 0) {
-                const sourcesDiv = document.createElement('div');
-                sourcesDiv.className = 'sources';
-                
-                const sourcesTitle = document.createElement('div');
-                sourcesTitle.className = 'sources-title';
-                sourcesTitle.textContent = 'Bronnen:';
-                sourcesDiv.appendChild(sourcesTitle);
-
-                sources.forEach(source => {
-                    const sourceItem = document.createElement('div');
-                    sourceItem.className = 'source-item';
-                    sourceItem.innerHTML = `
-                        <span class="source-file">${source.file}</span>
-                        <span class="source-similarity">${source.similarity}%</span>
-                        <br>
-                        <small>${source.preview}</small>
-                    `;
-                    sourcesDiv.appendChild(sourceItem);
-                });
-
-                contentDiv.appendChild(sourcesDiv);
-            }
-
-            chatArea.appendChild(messageDiv);
-            chatArea.scrollTop = chatArea.scrollHeight;
-
-            return contentDiv.querySelector('div:last-of-type') || contentDiv;
-        }
-
-        function showTyping() {
-            removeEmptyState();
-
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message assistant';
-            messageDiv.id = 'typing-indicator-msg';
-
-            const avatar = document.createElement('div');
-            avatar.className = 'message-avatar';
-            avatar.textContent = 'AI';
-
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'typing-indicator show';
-            typingDiv.innerHTML = '<span></span><span></span><span></span>';
-
-            messageDiv.appendChild(avatar);
-            messageDiv.appendChild(typingDiv);
-            chatArea.appendChild(messageDiv);
-            chatArea.scrollTop = chatArea.scrollHeight;
-        }
-
-        function removeTyping() {
-            const typingMsg = document.getElementById('typing-indicator-msg');
-            if (typingMsg) {
-                typingMsg.remove();
-            }
-        }
-
-        async function sendQuery(query) {
-            showTyping();
-            sendBtn.disabled = true;
-
-            const endpoint = currentMode === 'rag' ? '/api/query_stream' : '/api/query_direct_stream';
-
-            try {
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ query: query })
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Request failed');
-                }
-
-                removeTyping();
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let responseText = '';
-                let contentDiv = null;
-                let sources = null;
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n');
-
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            try {
-                                const data = JSON.parse(line.substring(6));
-                                
-
-                                if (data.type === 'sources') {
-                                    sources = data.sources;
-                                } else if (data.type === 'response') {
-                                    if (!contentDiv) {
-                                        contentDiv = addMessage('', false, null, currentMode);
-                                    }
-                                    responseText += data.content;
-                                    // Use innerHTML for formatted content
-                                    contentDiv.innerHTML = formatText(responseText);
-                                    chatArea.scrollTop = chatArea.scrollHeight;
-                                } else if (data.type === 'done') {
-                                    if (sources && sources.length > 0 && contentDiv) {
-                                        const sourcesDiv = document.createElement('div');
-                                        sourcesDiv.className = 'sources';
-                                        
-                                        const sourcesTitle = document.createElement('div');
-                                        sourcesTitle.className = 'sources-title';
-                                        sourcesTitle.textContent = 'Bronnen:';
-                                        sourcesDiv.appendChild(sourcesTitle);
-
-                                        sources.forEach(source => {
-                                            const sourceItem = document.createElement('div');
-                                            sourceItem.className = 'source-item';
-                                            sourceItem.innerHTML = `
-
-                                            `;
-                                            sourcesDiv.appendChild(sourceItem);
-                                        });
-
-                                        contentDiv.parentElement.appendChild(sourcesDiv);
-                                    }
-                                }
-                            } catch (e) {
-                                console.error('Error parsing SSE data:', e);
-                            }
-                        }
-                    }
-                }
-
-            } catch (error) {
-                removeTyping();
-                addMessage(`Error: ${error.message}`, false);
-            } finally {
-                sendBtn.disabled = false;
-            }
-        }
-
-        sendBtn.addEventListener('click', async () => {
-            const query = queryInput.value.trim();
-            if (!query) return;
-
-            addMessage(query, true);
-            queryInput.value = '';
-
-            await sendQuery(query);
-        });
-
-        queryInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !sendBtn.disabled) {
-                sendBtn.click();
-            }
-        });
-
-        // Flush documents
-        async function flushDocuments() {
-            if (!confirm('Weet je zeker dat je alle geindexeerde documenten wilt verwijderen?')) {
-                return;
-            }
-
-            showProgress('Verwijderen...');
-
-            try {
-                updateProgress(30, 'Verwijderen documenten...');
-
-                const response = await fetch('/api/flush_documents', {
-                    method: 'POST'
-                });
-
-                const data = await response.json();
-
-                updateProgress(80, 'Voltooien...');
-
-                if (data.success) {
-                    updateProgress(100, 'Verwijderd!');
-                    
-                    setTimeout(() => {
-                        hideProgress();
-                        alert(data.message);
-                        location.reload();
-                    }, 1000);
-                } else {
-                    hideProgress();
-                    alert('Fout: ' + (data.error || 'Unknown error'));
-                }
-            } catch (error) {
-                hideProgress();
-                alert('Fout bij verwijderen: ' + error.message);
-            }
-        }
-
-        // Ingest directory modal
-        function showIngestModal() {
-            document.getElementById('ingest-modal').classList.add('show');
-        }
-
-        function closeIngestModal() {
-            document.getElementById('ingest-modal').classList.remove('show');
-        }
-
-        // Documents modal
-        async function showDocumentsModal() {
-            const modal = document.getElementById('documents-modal');
-            const listElement = document.getElementById('document-list');
-            
-            modal.classList.add('show');
-            listElement.innerHTML = '<li style="text-align: center; padding: 20px; color: #999;">Loading...</li>';
-            
-            try {
-                const response = await fetch('/api/list_documents');
-                const data = await response.json();
-                
-                if (data.success && data.documents.length > 0) {
-                    listElement.innerHTML = '';
-                    data.documents.forEach(doc => {
-                        const li = document.createElement('li');
-                        li.className = 'document-item';
-                        li.innerHTML = `
-
-                        `;
-                        listElement.appendChild(li);
-                    });
-                } else {
-                    listElement.innerHTML = '<li style="text-align: center; padding: 20px; color: #999;">No documents found</li>';
-                }
-            } catch (error) {
-                listElement.innerHTML = '<li style="text-align: center; padding: 20px; color: #f44336;">Error loading documents</li>';
-                console.error('Error loading documents:', error);
-            }
-        }
-
-        function closeDocumentsModal() {
-            document.getElementById('documents-modal').classList.remove('show');
-        }
-
-        function closeDocumentsModalOnBackdrop(event) {
-            if (event.target.id === 'documents-modal') {
-                closeDocumentsModal();
-            }
-        }
-
-        // Progress bar functions
-        function showProgress(title = 'Processing...') {
-            const container = document.getElementById('progress-container');
-            const titleElement = document.getElementById('progress-title');
-            titleElement.textContent = title;
-            container.classList.add('show');
-            updateProgress(0, 'Voorbereiden...');
-        }
-
-        function updateProgress(percent, text = '') {
-            const fill = document.getElementById('progress-bar-fill');
-            const textElement = document.getElementById('progress-text');
-            
-            fill.style.width = percent + '%';
-            fill.textContent = Math.round(percent) + '%';
-            
-            if (text) {
-                textElement.textContent = text;
-            }
-        }
-
-        function hideProgress() {
-            document.getElementById('progress-container').classList.remove('show');
-        }
-
-        async function ingestDirectory() {
-            const directory = document.getElementById('directory-input').value.trim();
-            if (!directory) {
-                alert('Geef een directory pad op');
-                return;
-            }
-
-            closeIngestModal();
-            showProgress('Indexeren...', 'Scannen directory...');
-
-            try {
-                const response = await fetch('/api/ingest_directory', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ directory: directory })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    addMessage(`Klaar! ${data.message} (${data.total_found} gevonden)`, false, null, 'system');
-                    setTimeout(() => location.reload(), 2000);
-                } else {
-                    addMessage('Fout: ' + (data.error || 'Unknown error'), false, null, 'system');
-                }
-            } catch (error) {
-                addMessage('Fout bij indexeren: ' + error.message, false, null, 'system');
-            } finally {
-                hideProgress();
-            }
-        }
-
-        queryInput.focus();
-    </script>
+    <script src="/static/chat.js"></script>
 </body>
 </html>
