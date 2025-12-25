@@ -33,6 +33,53 @@
             overflow: hidden;
         }
 
+        /* Navigation Bar */
+        .nav-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 10px 20px;
+            display: flex;
+            gap: 5px;
+            overflow-x: auto;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-bar::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .nav-bar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            color: white;
+            text-decoration: none;
+            font-size: 13px;
+            border-radius: 12px;
+            transition: all 0.3s;
+            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.25);
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            font-size: 16px;
+        }
+
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -753,6 +800,38 @@
 </head>
 <body>
     <div class="container">
+        <!-- Navigation Bar -->
+        <div class="nav-bar">
+            <a href="/" class="nav-link active">
+                <span class="nav-icon">💬</span>
+                <span>Chat</span>
+            </a>
+            <a href="/documents" class="nav-link">
+                <span class="nav-icon">📋</span>
+                <span>Documenten</span>
+            </a>
+            <a href="/ingest" class="nav-link">
+                <span class="nav-icon">📚</span>
+                <span>Indexeren</span>
+            </a>
+            <a href="/storage" class="nav-link">
+                <span class="nav-icon">🔍</span>
+                <span>Opslag</span>
+            </a>
+            <a href="/models" class="nav-link">
+                <span class="nav-icon">🤖</span>
+                <span>Modellen</span>
+            </a>
+            <a href="/evaluation" class="nav-link">
+                <span class="nav-icon">📊</span>
+                <span>Evaluatie</span>
+            </a>
+            <a href="/settings" class="nav-link">
+                <span class="nav-icon">⚙️</span>
+                <span>Settings</span>
+            </a>
+        </div>
+
         <div class="header">
             <h1>JW zijn babbeldoos</h1>
             <div class="header-right">
@@ -767,7 +846,7 @@
                      onclick="showDocumentsModal()"
                      title="Click to view documents">
                     {% if docs_exist %}
-                        {{ doc_count }} documenten
+                        {{ doc_count }} documents
                     {% else %}
                         Geen documenten
                     {% endif %}
