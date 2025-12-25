@@ -463,6 +463,97 @@ def index():
     return render_template('index.html', docs_exist=docs_exist, doc_count=doc_count)
 
 
+# Placeholder routes for navigation menu (Coming Soon pages)
+@app.route('/documents')
+def documents_page():
+    """Documents management page (placeholder)."""
+    return render_template('coming_soon.html', 
+                         page='Documenten', 
+                         description='View and manage all indexed documents',
+                         icon='📋',
+                         features=[
+                             'Browse all indexed documents',
+                             'Search and filter by type',
+                             'Delete individual documents',
+                             'View document details and chunks'
+                         ])
+
+
+@app.route('/ingest')
+def ingest_page():
+    """Document indexing page (placeholder)."""
+    return render_template('coming_soon.html',
+                         page='Indexeren',
+                         description='Index new documents from directories',
+                         icon='📚',
+                         features=[
+                             'Select directory to index',
+                             'Real-time progress tracking',
+                             'File type filtering',
+                             'Batch processing'
+                         ])
+
+
+@app.route('/storage')
+def storage_page():
+    """Storage analysis page (placeholder)."""
+    return render_template('coming_soon.html',
+                         page='Opslag Analyse',
+                         description='Analyze local storage and find documents',
+                         icon='🔍',
+                         features=[
+                             'Scan directories for files',
+                             'Category breakdown',
+                             'Storage statistics',
+                             'Identify documents for indexing'
+                         ])
+
+
+@app.route('/models')
+def models_page():
+    """Model management page (placeholder)."""
+    return render_template('coming_soon.html',
+                         page='Model Beheer',
+                         description='Browse, download, and manage LLM models',
+                         icon='🤖',
+                         features=[
+                             'View installed models',
+                             'Download new models from Ollama',
+                             'Delete unused models',
+                             'Model information and stats'
+                         ])
+
+
+@app.route('/evaluation')
+def evaluation_page():
+    """RAG evaluation page (placeholder)."""
+    return render_template('coming_soon.html',
+                         page='RAG Evaluatie',
+                         description='Test and evaluate retrieval performance',
+                         icon='📊',
+                         features=[
+                             'Run retrieval quality tests',
+                             'Hit rate and MRR metrics',
+                             'Query examples and results',
+                             'Performance visualization'
+                         ])
+
+
+@app.route('/settings')
+def settings_page():
+    """Settings and deployment page (placeholder)."""
+    return render_template('coming_soon.html',
+                         page='Instellingen',
+                         description='Configure system and deploy to production',
+                         icon='⚙️',
+                         features=[
+                             'Database configuration',
+                             'Ollama settings',
+                             'Model preferences',
+                             'Deployment options'
+                         ])
+
+
 @app.route('/api/query_stream', methods=['POST'])
 def query_stream():
     """Handle streaming chat query."""

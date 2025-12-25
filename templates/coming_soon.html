@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page }} - Coming Soon{% endblock %}
+
+{% block page_title %}{{ page }}{% endblock %}
+
+{% block content %}
+<div class="card" style="text-align: center; padding: 60px 40px;">
+    <div style="font-size: 80px; margin-bottom: 30px;">{{ icon }}</div>
+    
+    <h1 style="font-size: 32px; color: #667eea; margin-bottom: 15px;">
+        {{ page }}
+    </h1>
+    
+    <p style="font-size: 18px; color: #666; margin-bottom: 40px;">
+        {{ description }}
+    </p>
+    
+    <div style="background: #f9f9f9; padding: 30px; border-radius: 12px; margin-bottom: 30px;">
+        <h3 style="color: #667eea; margin-bottom: 20px; font-size: 20px;">?? Under Development</h3>
+        <p style="color: #666; margin-bottom: 20px;">
+            This page is currently being built. When completed, it will include:
+        </p>
+        
+        <ul style="list-style: none; padding: 0;">
+            {% for feature in features %}
+            <li style="padding: 10px 0; color: #333; font-size: 16px;">
+                ? {{ feature }}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+        <h4 style="color: #856404; margin-bottom: 10px;">?? For Now</h4>
+        <p style="color: #856404; margin: 0;">
+            {% if page == 'Documenten' %}
+                Use the <strong>document count badge</strong> in the chat interface to view documents.
+            {% elif page == 'Indexeren' %}
+                Use the <strong>"Indexeer Directory"</strong> button in the chat toolbar.
+            {% elif page == 'Model Beheer' %}
+                Use the <strong>model selector</strong> dropdown in the chat header.
+            {% else %}
+                Most functionality is available through the <strong>Chat Interface</strong> and its toolbar buttons.
+            {% endif %}
+        </p>
+    </div>
+    
+    <div style="display: flex; gap: 15px; justify-content: center;">
+        <a href="/" class="btn btn-primary" style="padding: 15px 30px; font-size: 16px;">
+            ? Back to Chat
+        </a>
+        
+        {% if page == 'Documenten' %}
+            <button onclick="window.location.href='/'; setTimeout(() => document.querySelector('.status-badge')?.click(), 500);" 
+                    class="btn btn-secondary" style="padding: 15px 30px; font-size: 16px;">
+                View Documents
+            </button>
+        {% elif page == 'Indexeren' %}
+            <button onclick="window.location.href='/'; setTimeout(() => document.querySelector('[onclick=\'showIngestModal()\']')?.click(), 500);" 
+                    class="btn btn-secondary" style="padding: 15px 30px; font-size: 16px;">
+                Index Documents
+            </button>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .card ul li {
+        animation: fadeInUp 0.5s ease-out forwards;
+        opacity: 0;
+    }
+    
+    {% for i in range(features|length) %}
+    .card ul li:nth-child({{ i + 1 }}) {
+        animation-delay: {{ i * 0.1 }}s;
+    }
+    {% endfor %}
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}
