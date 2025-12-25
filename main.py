@@ -54,6 +54,10 @@ try:
     from WhereSpace import ingest_documents_to_pgvector, RAG_DOCUMENT_TYPES, MAX_DOCUMENT_SIZE
     from WhereSpaceChat import main as start_chat_server
     from deployment import deploy_to_production
+    from model_manager import (
+        check_ollama_running, list_installed_models, pull_model,
+        delete_model, search_ollama_models, get_model_statistics, format_size as format_model_size
+    )
     MODULES_AVAILABLE = True
 except ImportError as e:
     logger.error(f"Failed to import modules: {e}")
@@ -106,6 +110,11 @@ def show_menu():
     print("   - Configure deployment parameters")
     print("   - Run pre-deployment checks")
     print("   - Deploy to production server")
+    print()
+    print("7. ?? Beheer LLM modellen")
+    print("   - Bekijk geïnstalleerde modellen")
+    print("   - Download nieuwe modellen")
+    print("   - Verwijder modellen")
     print()
     print("0. ?? Afsluiten")
     print()
@@ -468,6 +477,322 @@ def deploy_to_production():
         input("\nDruk op Enter om terug te gaan...")
 
 
+def manage_models():
+    """Option 7: Manage LLM models."""
+    while True:
+        clear_screen()
+        show_banner()
+        print("?? LLM MODEL BEHEER")
+        print("=" * 60)
+        print()
+        
+        # Check if Ollama is running
+        if not check_ollama_running():
+            print("??  Ollama is niet bereikbaar!")
+            print()
+            print("Start Ollama met:")
+            print("  ollama serve")
+            print()
+            input("Druk op Enter om terug te gaan...")
+            return
+        
+        # Get statistics
+        stats = get_model_statistics()
+        
+        print(f"?? Statistieken:")
+        print(f"   Geïnstalleerde modellen: {stats['total_models']}")
+        print(f"   Totale grootte: {stats['total_size_formatted']}")
+        print()
+        
+        if stats['families']:
+            print("?? Model families:")
+            for family, count in sorted(stats['families'].items()):
+                print(f"   {family}: {count} model(len)")
+            print()
+        
+        print("Opties:")
+        print("  [1] ?? Bekijk geïnstalleerde modellen")
+        print("  [2] ?? Zoek en download modellen")
+        print("  [3] ???  Verwijder model")
+        print("  [4] ??  Model informatie")
+        print("  [q] Terug naar hoofdmenu")
+        print()
+        
+        choice = input("Selecteer optie: ").strip().lower()
+        
+        if choice == 'q':
+            return
+        elif choice == '1':
+            view_installed_models()
+        elif choice == '2':
+            browse_and_download_models()
+        elif choice == '3':
+            delete_model_interactive()
+        elif choice == '4':
+            show_model_info()
+        else:
+            print("\n??  Ongeldige optie")
+            input("Druk op Enter om door te gaan...")
+
+
+def view_installed_models():
+    """Show list of installed models."""
+    clear_screen()
+    show_banner()
+    print("?? GEÏNSTALLEERDE MODELLEN")
+    print("=" * 60)
+    print()
+    
+    models = list_installed_models()
+    
+    if not models:
+        print("Geen modellen geïnstalleerd.")
+        print()
+        print("Download modellen via optie [2] in het model beheer menu.")
+    else:
+        print(f"Totaal: {len(models)} model(len)\n")
+        
+        for i, model in enumerate(models, 1):
+            name = model['name']
+            size = model['size_formatted']
+            family = model['family']
+            
+            print(f"{i:2}. [{family:12}] {name:30} {size:>10}")
+        
+        print()
+        print("-" * 60)
+        
+        total_size = sum(m['size'] for m in models)
+        print(f"{'Totale grootte:':44} {format_model_size(total_size):>10}")
+    
+    print()
+    input("Druk op Enter om terug te gaan...")
+
+
+def browse_and_download_models():
+    """Browse available models and download."""
+    clear_screen()
+    show_banner()
+    print("?? BESCHIKBARE MODELLEN")
+    print("=" * 60)
+    print()
+    
+    print("Populaire modellen:")
+    print()
+    
+    available = search_ollama_models()
+    
+    # Separate recommended and other models
+    recommended = [m for m in available if m.get('recommended', False)]
+    other = [m for m in available if not m.get('recommended', False)]
+    
+    print("? Aanbevolen modellen:")
+    for i, model in enumerate(recommended, 1):
+        name = model['name']
+        desc = model['description']
+        size = model['size_estimate']
+        print(f"  {i:2}. {name:20} {size:>8}")
+        print(f"      {desc}")
+        print()
+    
+    print("?? Andere modellen:")
+    start_idx = len(recommended) + 1
+    for i, model in enumerate(other, start_idx):
+        name = model['name']
+        desc = model['description']
+        size = model['size_estimate']
+        print(f"  {i:2}. {name:20} {size:>8}")
+        print(f"      {desc}")
+        print()
+    
+    print("-" * 60)
+    print("\nSelecteer een nummer om te downloaden, of [q] om terug te gaan")
+    
+    choice = input("\nKeuze: ").strip().lower()
+    
+    if choice == 'q':
+        return
+    
+    try:
+        idx = int(choice) - 1
+        all_models = recommended + other
+        
+        if 0 <= idx < len(all_models):
+            selected_model = all_models[idx]
+            model_name = selected_model['name']
+            
+            # Confirm download
+            print()
+            print(f"Download {model_name}?")
+            print(f"Grootte: {selected_model['size_estimate']}")
+            print()
+            confirm = input("Bevestig [j/N]: ").strip().lower()
+            
+            if confirm == 'j':
+                success, message = pull_model(model_name, show_progress=True)
+                
+                print()
+                if success:
+                    print(f"? {message}")
+                else:
+                    print(f"? {message}")
+                
+                print()
+                input("Druk op Enter om door te gaan...")
+            else:
+                print("\nDownload geannuleerd")
+                input("Druk op Enter om door te gaan...")
+        else:
+            print("\n??  Ongeldige selectie")
+            input("Druk op Enter om door te gaan...")
+            
+    except ValueError:
+        print("\n??  Ongeldige invoer")
+        input("Druk op Enter om door te gaan...")
+
+
+def delete_model_interactive():
+    """Delete a model interactively."""
+    clear_screen()
+    show_banner()
+    print("???  VERWIJDER MODEL")
+    print("=" * 60)
+    print()
+    
+    models = list_installed_models()
+    
+    if not models:
+        print("Geen modellen geïnstalleerd.")
+        print()
+        input("Druk op Enter om terug te gaan...")
+        return
+    
+    print("Geïnstalleerde modellen:")
+    print()
+    
+    for i, model in enumerate(models, 1):
+        name = model['name']
+        size = model['size_formatted']
+        print(f"  {i:2}. {name:30} {size:>10}")
+    
+    print()
+    print("Selecteer een nummer om te verwijderen, of [q] om terug te gaan")
+    
+    choice = input("\nKeuze: ").strip().lower()
+    
+    if choice == 'q':
+        return
+    
+    try:
+        idx = int(choice) - 1
+        
+        if 0 <= idx < len(models):
+            selected_model = models[idx]
+            model_name = selected_model['name']
+            
+            # Confirm deletion
+            print()
+            print(f"??  Weet je zeker dat je '{model_name}' wilt verwijderen?")
+            print(f"   Dit zal {selected_model['size_formatted']} vrijmaken.")
+            print()
+            confirm = input("Bevestig met 'DELETE': ").strip()
+            
+            if confirm == 'DELETE':
+                success, message = delete_model(model_name)
+                
+                print()
+                if success:
+                    print(f"? {message}")
+                else:
+                    print(f"? {message}")
+                
+                print()
+                input("Druk op Enter om door te gaan...")
+            else:
+                print("\nVerwijdering geannuleerd")
+                input("Druk op Enter om door te gaan...")
+        else:
+            print("\n??  Ongeldige selectie")
+            input("Druk op Enter om door te gaan...")
+            
+    except ValueError:
+        print("\n??  Ongeldige invoer")
+        input("Druk op Enter om door te gaan...")
+
+
+def show_model_info():
+    """Show detailed information about a model."""
+    clear_screen()
+    show_banner()
+    print("??  MODEL INFORMATIE")
+    print("=" * 60)
+    print()
+    
+    models = list_installed_models()
+    
+    if not models:
+        print("Geen modellen geïnstalleerd.")
+        print()
+        input("Druk op Enter om terug te gaan...")
+        return
+    
+    print("Geïnstalleerde modellen:")
+    print()
+    
+    for i, model in enumerate(models, 1):
+        name = model['name']
+        print(f"  {i:2}. {name}")
+    
+    print()
+    print("Selecteer een nummer voor details, of [q] om terug te gaan")
+    
+    choice = input("\nKeuze: ").strip().lower()
+    
+    if choice == 'q':
+        return
+    
+    try:
+        idx = int(choice) - 1
+        
+        if 0 <= idx < len(models):
+            selected_model = models[idx]
+            model_name = selected_model['name']
+            
+            print()
+            print(f"?? Details voor: {model_name}")
+            print("=" * 60)
+            print()
+            print(f"Naam:     {selected_model['name']}")
+            print(f"Familie:  {selected_model['family']}")
+            print(f"Grootte:  {selected_model['size_formatted']}")
+            print(f"Modified: {selected_model['modified']}")
+            print()
+            
+            # Try to get additional info from Ollama
+            from model_manager import get_model_info
+            info = get_model_info(model_name)
+            
+            if info and info.get('details'):
+                details = info['details']
+                print("Technische details:")
+                if 'parameter_size' in details:
+                    print(f"  Parameters: {details['parameter_size']}")
+                if 'quantization_level' in details:
+                    print(f"  Quantization: {details['quantization_level']}")
+                if 'format' in details:
+                    print(f"  Format: {details['format']}")
+            
+            print()
+            input("Druk op Enter om terug te gaan...")
+        else:
+            print("\n??  Ongeldige selectie")
+            input("Druk op Enter om door te gaan...")
+            
+    except ValueError:
+        print("\n??  Ongeldige invoer")
+        input("Druk op Enter om door te gaan...")
+
+
 def main():
     """Main menu loop."""
     if not MODULES_AVAILABLE:
@@ -480,7 +805,7 @@ def main():
             show_banner()
             show_menu()
             
-            choice = input("Kies een optie [0-6]: ")
+            choice = input("Kies een optie [0-7]: ")
 
             if choice == '1':
                 analyze_storage()
@@ -494,6 +819,8 @@ def main():
                 view_indexed_documents()
             elif choice == '6':
                 deploy_to_production()
+            elif choice == '7':
+                manage_models()
             elif choice == '0':
                 clear_screen()
                 show_banner()
