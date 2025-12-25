@@ -500,7 +500,7 @@ def manage_models():
         stats = get_model_statistics()
         
         print(f"?? Statistieken:")
-        print(f"   GeÔnstalleerde modellen: {stats['total_models']}")
+        print(f"   Ge√Ønstalleerde modellen: {stats['total_models']}")
         print(f"   Totale grootte: {stats['total_size_formatted']}")
         print()
         
@@ -511,7 +511,7 @@ def manage_models():
             print()
         
         print("Opties:")
-        print("  [1] ?? Bekijk geÔnstalleerde modellen")
+        print("  [1] ?? Bekijk ge√Ønstalleerde modellen")
         print("  [2] ?? Zoek en download modellen")
         print("  [3] ???  Verwijder model")
         print("  [4] ??  Model informatie")
@@ -539,14 +539,14 @@ def view_installed_models():
     """Show list of installed models."""
     clear_screen()
     show_banner()
-    print("?? GEœNSTALLEERDE MODELLEN")
+    print("?? GE√èNSTALLEERDE MODELLEN")
     print("=" * 60)
     print()
     
     models = list_installed_models()
     
     if not models:
-        print("Geen modellen geÔnstalleerd.")
+        print("Geen modellen ge√Ønstalleerd.")
         print()
         print("Download modellen via optie [2] in het model beheer menu.")
     else:
@@ -662,12 +662,12 @@ def delete_model_interactive():
     models = list_installed_models()
     
     if not models:
-        print("Geen modellen geÔnstalleerd.")
+        print("Geen modellen ge√Ønstalleerd.")
         print()
         input("Druk op Enter om terug te gaan...")
         return
     
-    print("GeÔnstalleerde modellen:")
+    print("Ge√Ønstalleerde modellen:")
     print()
     
     for i, model in enumerate(models, 1):
@@ -731,12 +731,12 @@ def show_model_info():
     models = list_installed_models()
     
     if not models:
-        print("Geen modellen geÔnstalleerd.")
+        print("Geen modellen ge√Ønstalleerd.")
         print()
         input("Druk op Enter om terug te gaan...")
         return
     
-    print("GeÔnstalleerde modellen:")
+    print("Ge√Ønstalleerde modellen:")
     print()
     
     for i, model in enumerate(models, 1):
