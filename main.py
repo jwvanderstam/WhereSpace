@@ -423,31 +423,42 @@ def main():
         sys.exit(1)
     
     while True:
-        clear_screen()
-        show_banner()
-        show_menu()
-        
-        choice = input("Kies een optie [0-5]: ")
-
-        if choice == '1':
-            analyze_storage()
-        elif choice == '2':
-            ingest_documents()
-        elif choice == '3':
-            start_webserver()
-        elif choice == '4':
-            evaluate_rag()
-        elif choice == '5':
-            view_indexed_documents()
-        elif choice == '0':
+        try:
             clear_screen()
             show_banner()
-            print("Bedankt voor het gebruiken van JW zijn babbeldoos!")
-            print()
+            show_menu()
+            
+            choice = input("Kies een optie [0-5]: ")
+
+            if choice == '1':
+                analyze_storage()
+            elif choice == '2':
+                ingest_documents()
+            elif choice == '3':
+                start_webserver()
+            elif choice == '4':
+                evaluate_rag()
+            elif choice == '5':
+                view_indexed_documents()
+            elif choice == '0':
+                clear_screen()
+                show_banner()
+                print("Bedankt voor het gebruiken van JW zijn babbeldoos!")
+                print()
+                sys.exit(0)
+            else:
+                print("\n? Ongeldige keuze. Probeer opnieuw.")
+                input("Druk op Enter om door te gaan...")
+        
+        except EOFError:
+            # Handle non-interactive mode or closed input stream
+            logger.info("\n\nNo input available (non-interactive mode)")
+            logger.info("Exiting gracefully...")
             sys.exit(0)
-        else:
-            print("\n? Ongeldige keuze. Probeer opnieuw.")
-            input("Druk op Enter om door te gaan...")
+        except KeyboardInterrupt:
+            # Handle Ctrl+C during menu input
+            logger.info("\n\nInterrupted by user")
+            sys.exit(0)
 
 
 if __name__ == "__main__":
@@ -455,6 +466,9 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("\n\n? Programma afgesloten")
+        sys.exit(0)
+    except EOFError:
+        print("\n\n? No input available - exiting")
         sys.exit(0)
     except Exception as e:
         logger.error(f"Unexpected error: {e}", exc_info=True)
