@@ -1341,10 +1341,7 @@
                                             const sourceItem = document.createElement('div');
                                             sourceItem.className = 'source-item';
                                             sourceItem.innerHTML = `
-                                                <span class="source-file">${source.file}</span>
-                                                <span class="source-similarity">${source.similarity}%</span>
-                                                <br>
-                                                <small>${source.preview}</small>
+
                                             `;
                                             sourcesDiv.appendChild(sourceItem);
                                         });
@@ -1447,21 +1444,7 @@
                         const li = document.createElement('li');
                         li.className = 'document-item';
                         li.innerHTML = `
-                            <div class="document-name">${doc.file_name}</div>
-                            <div class="document-meta">
-                                <span class="document-meta-item">
-                                    <strong>Type:</strong> ${doc.file_type || 'unknown'}
-                                </span>
-                                <span class="document-meta-item">
-                                    <strong>Size:</strong> ${doc.file_size_formatted}
-                                </span>
-                                <span class="document-meta-item">
-                                    <strong>Chunks:</strong> ${doc.chunk_count}
-                                </span>
-                                <span class="document-meta-item">
-                                    <strong>Ingested:</strong> ${doc.ingested_at || 'unknown'}
-                                </span>
-                            </div>
+
                         `;
                         listElement.appendChild(li);
                     });
@@ -1544,45 +1527,6 @@
         }
 
         queryInput.focus();
-
-        // Model switcher
-        function switchModel() {
-            const modelSelector = document.getElementById('model-selector');
-            const selectedModel = modelSelector.value;
-            
-            console.log('Model switched to:', selectedModel);
-            // Add any other logic needed when switching models
-        }
-
-        // Refresh models manually
-        async function refreshModels() {
-            const refreshBtn = document.getElementById('refresh-models-btn');
-            refreshBtn.disabled = true;
-            refreshBtn.classList.add('spinning');
-            
-            try {
-                await loadModels();
-                console.log('Models refreshed');
-                
-                // Show brief success indicator
-                setTimeout(() => {
-                    refreshBtn.classList.remove('spinning');
-                    refreshBtn.textContent = '✓';
-                    setTimeout(() => {
-                        refreshBtn.textContent = '↻';
-                    }, 1000);
-                }, 500);
-            } catch (error) {
-                console.error('Error refreshing models:', error);
-                refreshBtn.classList.remove('spinning');
-                refreshBtn.textContent = '✗';
-                setTimeout(() => {
-                    refreshBtn.textContent = '↻';
-                }, 2000);
-            } finally {
-                refreshBtn.disabled = false;
-            }
-        }
     </script>
 </body>
 </html>
