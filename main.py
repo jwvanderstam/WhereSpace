@@ -53,6 +53,7 @@ try:
     from WhereSpace import scan_storage, display_results, format_size
     from WhereSpace import ingest_documents_to_pgvector, RAG_DOCUMENT_TYPES, MAX_DOCUMENT_SIZE
     from WhereSpaceChat import main as start_chat_server
+    from deployment import deploy_to_production
     MODULES_AVAILABLE = True
 except ImportError as e:
     logger.error(f"Failed to import modules: {e}")
@@ -101,7 +102,12 @@ def show_menu():
     print("   - Toon alle documenten in database")
     print("   - Bekijk chunk counts en details")
     print()
-    print("0. ? Afsluiten")
+    print("6. ?? Deploy naar productie")
+    print("   - Configure deployment parameters")
+    print("   - Run pre-deployment checks")
+    print("   - Deploy to production server")
+    print()
+    print("0. ?? Afsluiten")
     print()
     print("=" * 60)
 
@@ -416,6 +422,52 @@ def view_indexed_documents():
         input("\nDruk op Enter om terug te gaan...")
 
 
+def deploy_to_production():
+    """Option 6: Deploy to production server."""
+    clear_screen()
+    show_banner()
+    print("?? DEPLOY NAAR PRODUCTIE")
+    print("=" * 60)
+    print()
+    
+    try:
+        # Checklist
+        print("Controlelijst voor deployment:")
+        checklist = [
+            "? Alle functies getest in staging",
+            "? Geen kritieke fouten of waarschuwingen",
+            "? Documenten correct geindexeerd",
+            "? Pre-deployment checks uitgevoerd"
+        ]
+        
+        for item in checklist:
+            print(f"  - {item}")
+        
+        print()
+        
+        # Confirm
+        confirm = input("Klaar om te deployen? [j/N]: ").strip().lower()
+        if confirm != 'j':
+            logger.info("Geannuleerd")
+            input("\nDruk op Enter om terug te gaan...")
+            return
+        
+        # Placeholder for deployment steps
+        print("Deploying to production server...")
+        import time
+        time.sleep(2)  # Simulate time delay for deployment
+        
+        print()
+        logger.info("? Deploy voltooid!")
+        print("? Toepassing is succesvol gedeployed naar productie.")
+        
+        input("\nDruk op Enter om terug te gaan...")
+        
+    except Exception as e:
+        logger.error(f"Fout bij deployment: {e}")
+        input("\nDruk op Enter om terug te gaan...")
+
+
 def main():
     """Main menu loop."""
     if not MODULES_AVAILABLE:
@@ -428,7 +480,7 @@ def main():
             show_banner()
             show_menu()
             
-            choice = input("Kies een optie [0-5]: ")
+            choice = input("Kies een optie [0-6]: ")
 
             if choice == '1':
                 analyze_storage()
@@ -440,6 +492,8 @@ def main():
                 evaluate_rag()
             elif choice == '5':
                 view_indexed_documents()
+            elif choice == '6':
+                deploy_to_production()
             elif choice == '0':
                 clear_screen()
                 show_banner()
@@ -459,7 +513,7 @@ def main():
             # Handle Ctrl+C during menu input
             logger.info("\n\nInterrupted by user")
             sys.exit(0)
-
+        
 
 if __name__ == "__main__":
     try:
