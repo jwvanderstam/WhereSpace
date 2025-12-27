@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Topbar Load</title>
+</head>
+<body>
+    <div id="current-model-name">Loading...</div>
+    <div id="doc-count">Loading...</div>
+    <div id="console-output" style="margin-top: 20px; padding: 10px; background: #f0f0f0;"></div>
+
+    <script>
+        const consoleOutput = document.getElementById('console-output');
+        function log(msg) {
+            consoleOutput.innerHTML += msg + '<br>';
+            console.log(msg);
+        }
+
+        log('Script started, document.readyState: ' + document.readyState);
+
+        async function loadStatus() {
+            log('loadStatus() called');
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/status');
+                const data = await response.json();
+                log('Status data received: ' + JSON.stringify(data));
+                
+                const docCountEl = document.getElementById('doc-count');
+                if (docCountEl) {
+                    docCountEl.textContent = data.document_count ? `${data.document_count} docs` : 'No docs';
+                    log('Updated doc count');
+                }
+                
+                if (data.current_model) {
+                    const modelName = data.current_model.replace(':latest', '').replace(/[_-]/g, ' ');
+                    const formattedName = modelName.split(' ').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                    ).join(' ');
+                    const modelNameEl = document.getElementById('current-model-name');
+                    if (modelNameEl) {
+                        modelNameEl.textContent = formattedName;
+                        log('Updated model name to: ' + formattedName);
+                    }
+                }
+            } catch (error) {
+                log('Error: ' + error.message);
+            }
+        }
+
+        function initializeTopbar() {
+            log('initializeTopbar() called');
+            loadStatus();
+        }
+
+        if (document.readyState === 'loading') {
+            log('DOM still loading, waiting for DOMContentLoaded');
+            document.addEventListener('DOMContentLoaded', initializeTopbar);
+        } else {
+            log('DOM already loaded, running immediately');
+            initializeTopbar();
+        }
+    </script>
+</body>
+</html>

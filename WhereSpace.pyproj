@@ -11,6 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>WhereSpace</Name>
     <RootNamespace>WhereSpace</RootNamespace>
+    <TestFramework>Pytest</TestFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,13 +22,25 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="app.py" />
     <Compile Include="batch_embeddings.py" />
     <Compile Include="check_dependencies.py" />
     <Compile Include="check_ingested_documents.py" />
+    <Compile Include="config.py" />
+    <Compile Include="deployment.py" />
+    <Compile Include="deployment_config.py" />
     <Compile Include="evaluate_rag.py" />
+    <Compile Include="legacy_terminal_menu.py" />
     <Compile Include="main.py" />
+    <Compile Include="model_manager.py" />
     <Compile Include="monitor_ingestion.py" />
     <Compile Include="optimized_rag_query.py" />
+    <Compile Include="services\database_service.py" />
+    <Compile Include="services\document_service.py" />
+    <Compile Include="services\evaluation_service.py" />
+    <Compile Include="services\llm_service.py" />
+    <Compile Include="services\model_service.py" />
+    <Compile Include="services\__init__.py" />
     <Compile Include="simple_connection_test.py" />
     <Compile Include="tests\test_model_switching.py" />
     <Compile Include="test_model_persistence.py" />
@@ -43,7 +56,38 @@
     <Content Include="CLEANUP_SUMMARY.md" />
     <Content Include="COMPLETE_SOLUTION_GUIDE.md" />
     <Content Include="COMPREHENSIVE_OPTIMIZATION_GUIDE.md" />
+    <Content Include="docs\ADD_NAVIGATION_MENU.md" />
+    <Content Include="docs\ALL_PAGES_WORKING.md" />
+    <Content Include="docs\ARCHITECTURE_AND_SIDEBAR_FIXED.md" />
+    <Content Include="docs\CHAT_FORMATTING_ADDED.md" />
+    <Content Include="docs\CLEANUP_COMPLETE.md" />
+    <Content Include="docs\CONSOLE_ERRORS_FIXED_FINAL.md" />
+    <Content Include="docs\DEPLOYMENT.md" />
+    <Content Include="docs\DOCUMENTS_PAGE_IMPLEMENTATION.md" />
+    <Content Include="docs\DOCUMENT_SERVICE_STUB_CREATED.md" />
+    <Content Include="docs\EMOJIS_REMOVED_FINAL.md" />
+    <Content Include="docs\FINAL_SUMMARY.md" />
+    <Content Include="docs\FIX_404_HANGING_PAGE.md" />
+    <Content Include="docs\IMPLEMENTATION_GUIDE.md" />
+    <Content Include="docs\MODEL_LOADING_FIXED.md" />
     <Content Include="docs\MODEL_PERSISTENCE_COMPLETE_FIX.md" />
+    <Content Include="docs\MODEL_SELECTOR_FIXED.md" />
+    <Content Include="docs\NAVIGATION_BAR_ADDED.md" />
+    <Content Include="docs\NAVIGATION_MENU_COMPLETE.md" />
+    <Content Include="docs\PROGRESS_REPORT.md" />
+    <Content Include="docs\QUICKSTART.md" />
+    <Content Include="docs\README.md" />
+    <Content Include="docs\RESTRUCTURING_PLAN.md" />
+    <Content Include="docs\SIDEBAR_MISSING_FIX.md" />
+    <Content Include="docs\SOLUTION_CLEANUP_FINAL.md" />
+    <Content Include="docs\TOPBAR_AND_CHAT_FIXED.md" />
+    <Content Include="docs\TOPBAR_ERRORS_FIXED.md" />
+    <Content Include="docs\TOPBAR_SIDEBAR_FIXED.md" />
+    <Content Include="docs\UNICODE_ERROR_FIXED.md" />
+    <Content Include="docs\UNIFIED_APP_READY.md" />
+    <Content Include="docs\WEB_INTERFACE_MIGRATION.md" />
+    <Content Include="docs\WORKSPACE_CLEANUP.md" />
+    <Content Include="docs\WORKSPACE_CLEANUP_COMPLETE.md" />
     <Content Include="DYNAMIC_MODEL_SWITCHING_GUIDE.md" />
     <Content Include="INSTALLATION.md" />
     <Content Include="MODEL_PERSISTENCE_FIX.md" />
@@ -51,6 +95,7 @@
     <Content Include="MODEL_SWITCHER_GUIDE.md" />
     <Content Include="OPTIMIZATION_SUMMARY.md" />
     <Content Include="PERFORMANCE_GUIDE.md" />
+    <Content Include="QUICKSTART.md" />
     <Content Include="QUICK_OPTIMIZATION_GUIDE.md" />
     <Content Include="QUICK_REFERENCE.md" />
     <Content Include="README.md" />
@@ -59,12 +104,26 @@
     <Content Include="ROBUST_INGESTION.md" />
     <Content Include="start.bat" />
     <Content Include="start.sh" />
+    <Content Include="templates\base.html" />
+    <Content Include="templates\chat.html" />
+    <Content Include="templates\coming_soon.html" />
+    <Content Include="templates\dashboard.html" />
+    <Content Include="templates\documents.html" />
+    <Content Include="templates\documents_page.html" />
+    <Content Include="templates\evaluation.html" />
     <Content Include="templates\index.html" />
+    <Content Include="templates\ingest.html" />
+    <Content Include="templates\layout.html" />
+    <Content Include="templates\models.html" />
+    <Content Include="templates\settings.html" />
+    <Content Include="templates\storage.html" />
+    <Content Include="test_topbar_load.html" />
     <Content Include="TROUBLESHOOTING.md" />
     <Content Include="UNICODE_FIX.md" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="docs\" />
+    <Folder Include="services\" />
     <Folder Include="templates\" />
     <Folder Include="tests\" />
   </ItemGroup>

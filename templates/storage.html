@@ -1,0 +1,188 @@
+{% extends "layout.html" %}
+
+{% block title %}Storage Analysis - WhereSpace{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">?? Storage Analysis</h1>
+    </div>
+    
+    <p style="font-size: 16px; line-height: 1.8; margin-bottom: 30px;">
+        Analyze storage usage by file categories to understand how your disk space is being used.
+    </p>
+
+    <!-- Directory Analyzer -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Analyze Directory</h2>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px;">
+                Directory Path:
+            </label>
+            <div style="display: flex; gap: 10px;">
+                <input 
+                    type="text" 
+                    id="analysis-path" 
+                    placeholder="C:\Users\YourName\Documents" 
+                    style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;"
+                />
+                <button class="btn btn-primary" onclick="analyzeStorage()">
+                    ?? Analyze
+                </button>
+            </div>
+        </div>
+        
+        <div id="analysis-status" style="margin-top: 15px;"></div>
+    </div>
+
+    <!-- Analysis Results -->
+    <div class="card" id="results-section" style="display: none;">
+        <div class="card-header">
+            <h2 class="card-title">Storage Distribution</h2>
+        </div>
+        
+        <!-- Summary Stats -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center;">
+                <div style="font-size: 32px; font-weight: 700; margin-bottom: 5px;" id="total-files">0</div>
+                <div style="font-size: 14px; opacity: 0.9;">Total Files</div>
+            </div>
+            
+            <div class="card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; text-align: center;">
+                <div style="font-size: 32px; font-weight: 700; margin-bottom: 5px;" id="total-storage">0 GB</div>
+                <div style="font-size: 14px; opacity: 0.9;">Total Storage</div>
+            </div>
+        </div>
+        
+        <!-- Category Breakdown -->
+        <div id="categories-list"></div>
+    </div>
+</div>
+
+<style>
+.category-item {
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    transition: all 0.3s;
+}
+
+.category-item:hover {
+    background: var(--light);
+    border-color: var(--primary);
+}
+
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.category-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: #333;
+}
+
+.category-size {
+    font-size: 14px;
+    color: #666;
+}
+
+.category-bar {
+    height: 8px;
+    background: var(--light);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.category-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.category-percentage {
+    font-size: 12px;
+    color: #999;
+    margin-top: 5px;
+}
+</style>
+
+<script>
+async function analyzeStorage() {
+    const pathInput = document.getElementById('analysis-path');
+    const path = pathInput.value.trim();
+    
+    if (!path) {
+        alert('Please enter a directory path');
+        return;
+    }
+    
+    const statusDiv = document.getElementById('analysis-status');
+    statusDiv.innerHTML = '<p style="color: var(--primary); font-weight: 600;">?? Analyzing storage... This may take a moment...</p>';
+    
+    try {
+        const response = await fetch('/api/analyze_storage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: path })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            displayAnalysis(data.analysis);
+            statusDiv.innerHTML = '<p style="color: var(--success); font-weight: 600;">? Analysis complete!</p>';
+        } else {
+            statusDiv.innerHTML = `<p style="color: var(--danger); font-weight: 600;">? Error: ${data.error}</p>`;
+        }
+    } catch (error) {
+        statusDiv.innerHTML = `<p style="color: var(--danger); font-weight: 600;">? Error: ${error.message}</p>`;
+    }
+}
+
+function displayAnalysis(analysis) {
+    const resultsSection = document.getElementById('results-section');
+    const categoriesList = document.getElementById('categories-list');
+    
+    resultsSection.style.display = 'block';
+    
+    // Update summary stats
+    document.getElementById('total-files').textContent = analysis.file_count.toLocaleString();
+    document.getElementById('total-storage').textContent = analysis.total_size_formatted;
+    
+    // Display categories
+    if (analysis.categories.length === 0) {
+        categoriesList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No files found</p>';
+        return;
+    }
+    
+    categoriesList.innerHTML = analysis.categories.map(cat => `
+        <div class="category-item">
+            <div class="category-header">
+                <div class="category-name">${cat.name}</div>
+                <div class="category-size">${cat.size_formatted}</div>
+            </div>
+            <div class="category-bar">
+                <div class="category-bar-fill" style="width: ${cat.percentage}%;"></div>
+            </div>
+            <div class="category-percentage">${cat.percentage}% of total storage</div>
+        </div>
+    `).join('');
+}
+
+// Set default path on load
+document.addEventListener('DOMContentLoaded', function() {
+    const homeDir = 'C:\\Users\\' + (window.navigator.userAgent.includes('Windows') ? 'Gebruiker' : 'YourName');
+    document.getElementById('analysis-path').value = homeDir;
+});
+</script>
+{% endblock %}

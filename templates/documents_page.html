@@ -1,0 +1,159 @@
+{% extends "layout.html" %}
+
+{% block title %}Documents - WhereSpace{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">?? Document Management</h1>
+        <button class="btn btn-primary" onclick="refreshDocuments()">
+            ?? Refresh
+        </button>
+    </div>
+    
+    <div style="background: var(--light); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <p style="color: #666; margin-bottom: 15px;">
+            View and manage your ingested documents. Documents are automatically chunked and embedded for RAG queries.
+        </p>
+        
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" onclick="alert('Document ingestion not yet implemented')">
+                ?? Index Directory
+            </button>
+            <button class="btn" onclick="deleteAllDocuments()" style="background: var(--danger); color: white;">
+                ??? Delete All
+            </button>
+        </div>
+    </div>
+    
+    <!-- Document Stats -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+        <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center;">
+            <div style="font-size: 32px; font-weight: 700; margin-bottom: 5px;" id="total-docs">0</div>
+            <div style="font-size: 14px; opacity: 0.9;">Total Documents</div>
+        </div>
+        
+        <div class="card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; text-align: center;">
+            <div style="font-size: 32px; font-weight: 700; margin-bottom: 5px;" id="total-size">0 MB</div>
+            <div style="font-size: 14px; opacity: 0.9;">Total Size</div>
+        </div>
+        
+        <div class="card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; text-align: center;">
+            <div style="font-size: 32px; font-weight: 700; margin-bottom: 5px;" id="total-chunks">0</div>
+            <div style="font-size: 14px; opacity: 0.9;">Total Chunks</div>
+        </div>
+    </div>
+    
+    <!-- Documents List -->
+    <div id="documents-list" style="background: white; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px;">
+        <div style="text-align: center; color: #999; padding: 40px 20px;">
+            <div style="font-size: 48px; margin-bottom: 15px;">??</div>
+            <h3 style="color: #666; margin-bottom: 10px;">Loading documents...</h3>
+        </div>
+    </div>
+</div>
+
+<style>
+.document-item {
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: all 0.3s;
+}
+
+.document-item:hover {
+    background: #f9f9f9;
+    border-color: var(--primary);
+}
+
+.document-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.document-meta {
+    font-size: 12px;
+    color: #666;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+</style>
+
+<script>
+async function loadDocuments() {
+    const listElement = document.getElementById('documents-list');
+    
+    try {
+        const response = await fetch('/api/list_documents');
+        const data = await response.json();
+        
+        if (data.success && data.documents.length > 0) {
+            document.getElementById('total-docs').textContent = data.documents.length;
+            
+            let totalSize = 0;
+            let totalChunks = 0;
+            
+            data.documents.forEach(doc => {
+                totalSize += doc.file_size || 0;
+                totalChunks += doc.chunk_count || 0;
+            });
+            
+            document.getElementById('total-size').textContent = (totalSize / (1024 * 1024)).toFixed(2) + ' MB';
+            document.getElementById('total-chunks').textContent = totalChunks;
+            
+            listElement.innerHTML = '';
+            
+            data.documents.forEach(doc => {
+                const item = document.createElement('div');
+                item.className = 'document-item';
+                item.innerHTML = `
+                    <div class="document-name">?? ${doc.file_name}</div>
+                    <div class="document-meta">
+                        <span><strong>Type:</strong> ${doc.file_type || 'unknown'}</span>
+                        <span><strong>Size:</strong> ${doc.file_size_formatted}</span>
+                        <span><strong>Chunks:</strong> ${doc.chunk_count}</span>
+                        <span><strong>Indexed:</strong> ${doc.ingested_at || 'unknown'}</span>
+                    </div>
+                `;
+                listElement.appendChild(item);
+            });
+        } else {
+            listElement.innerHTML = `
+                <div style="text-align: center; color: #999; padding: 40px 20px;">
+                    <div style="font-size: 48px; margin-bottom: 15px;">??</div>
+                    <h3 style="color: #666; margin-bottom: 10px;">No Documents</h3>
+                    <p>Use the old system (WhereSpaceChat.py.old) to index documents</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        listElement.innerHTML = `<div style="text-align: center; color: var(--danger); padding: 40px;">Error: ${error.message}</div>`;
+    }
+}
+
+function refreshDocuments() {
+    loadDocuments();
+}
+
+async function deleteAllDocuments() {
+    if (!confirm('Delete ALL documents? This cannot be undone.')) return;
+    
+    try {
+        const response = await fetch('/api/flush_documents', { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(data.message);
+            loadDocuments();
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+loadDocuments();
+</script>
+{% endblock %}
